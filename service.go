@@ -11,6 +11,7 @@ import (
 type Service struct {
 	username string
 	servers  []cchat.Server
+	lastid   uint32
 }
 
 var (
@@ -36,8 +37,8 @@ func (s *Service) Authenticate(form []string) error {
 	return nil
 }
 
-func (s *Service) Name() (string, error) {
-	return "Mock backend", nil
+func (s *Service) Name() string {
+	return "Mock backend"
 }
 
 func (s *Service) Servers(container cchat.ServersContainer) error {

@@ -2,6 +2,8 @@ package mock
 
 import (
 	"math/rand"
+	"strconv"
+	"sync/atomic"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/diamondburned/cchat"
@@ -9,6 +11,7 @@ import (
 
 type Server struct {
 	session  *Service
+	id       uint32
 	name     string
 	children []cchat.Server
 }
@@ -17,6 +20,10 @@ var (
 	_ cchat.Server     = (*Server)(nil)
 	_ cchat.ServerList = (*Server)(nil)
 )
+
+func (sv *Server) ID() string {
+	return strconv.Itoa(int(sv.id))
+}
 
 func (sv *Server) Name() (string, error) {
 	return sv.name, nil
@@ -36,6 +43,7 @@ func generateServers(s *Service, amount int) []cchat.Server {
 	for i := range channels {
 		channels[i] = &Server{
 			session:  s,
+			id:       atomic.AddUint32(&s.lastid, 1),
 			name:     randomdata.Noun(),
 			children: generateChannels(s, rand.Intn(12)),
 		}

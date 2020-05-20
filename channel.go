@@ -3,6 +3,7 @@ package mock
 import (
 	"errors"
 	"math/rand"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 
 type Channel struct {
 	session *Service
+	id      uint32
 	name    string
 	done    chan struct{}
 	send    chan Message // ideally this should be another type
@@ -22,6 +24,10 @@ var (
 	_ cchat.Server        = (*Channel)(nil)
 	_ cchat.ServerMessage = (*Channel)(nil)
 )
+
+func (ch *Channel) ID() string {
+	return strconv.Itoa(int(ch.id))
+}
 
 func (ch *Channel) Name() (string, error) {
 	return ch.name, nil
@@ -72,7 +78,11 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 func generateChannels(s *Service, amount int) []cchat.Server {
 	var channels = make([]cchat.Server, amount)
 	for i := range channels {
-		channels[i] = &Channel{session: s, name: "#" + randomdata.Noun()}
+		channels[i] = &Channel{
+			session: s,
+			id:      atomic.AddUint32(&s.lastid, 1),
+			name:    "#" + randomdata.Noun(),
+		}
 	}
 	return channels
 }

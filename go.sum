@@ -4,3 +4,7 @@ github.com/diamondburned/cchat v0.0.1 h1:ABoYPQ+uhsUopdDDw62jFsEjvsz6dlOttL/xIeU
 github.com/diamondburned/cchat v0.0.1/go.mod h1:2MdhWABRer4WhwcuLR0b2VY5S22Y1zDTpFqriAFrC08=
 github.com/diamondburned/cchat v0.0.2 h1:WfynDllfkUeTWKGwNWz5AWEXL88rl+6FO/uSfMdNiss=
 github.com/diamondburned/cchat v0.0.2/go.mod h1:2MdhWABRer4WhwcuLR0b2VY5S22Y1zDTpFqriAFrC08=
+github.com/diamondburned/cchat v0.0.3 h1:XpuRcs+RhdFOGfsD3uCporEhVo8HQ5s95Qlj+4U2Xno=
+github.com/diamondburned/cchat v0.0.3/go.mod h1:2MdhWABRer4WhwcuLR0b2VY5S22Y1zDTpFqriAFrC08=
+github.com/diamondburned/cchat v0.0.4 h1:RSuAX3T4PsPOPBDNZMTt6Mr+g1UZQ3A7vSBf9QPS7uQ=
+github.com/diamondburned/cchat v0.0.4/go.mod h1:2MdhWABRer4WhwcuLR0b2VY5S22Y1zDTpFqriAFrC08=
