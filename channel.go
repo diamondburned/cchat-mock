@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -21,8 +22,10 @@ type Channel struct {
 }
 
 var (
-	_ cchat.Server        = (*Channel)(nil)
-	_ cchat.ServerMessage = (*Channel)(nil)
+	_ cchat.Server                     = (*Channel)(nil)
+	_ cchat.ServerMessage              = (*Channel)(nil)
+	_ cchat.ServerMessageSender        = (*Channel)(nil)
+	_ cchat.ServerMessageSendCompleter = (*Channel)(nil)
 )
 
 func (ch *Channel) ID() string {
@@ -73,6 +76,18 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 
 	ch.send <- echoMessage(msg, atomic.AddUint32(&ch.lastID, 1), ch.session.username)
 	return nil
+}
+
+func (ch *Channel) CompleteMessage(words []string, i int) []string {
+	switch {
+	case strings.HasPrefix("complete", words[i]):
+		words[i] = "complete"
+	case strings.HasPrefix("me", words[i]) && i > 0 && words[i-1] == "complete":
+		words[i] = "me"
+	default:
+		return nil
+	}
+	return words
 }
 
 func generateChannels(s *Service, amount int) []cchat.Server {
