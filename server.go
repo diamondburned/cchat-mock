@@ -10,7 +10,7 @@ import (
 )
 
 type Server struct {
-	session  *Service
+	session  *Session
 	id       uint32
 	name     string
 	children []cchat.Server
@@ -34,11 +34,11 @@ func (sv *Server) Servers(container cchat.ServersContainer) error {
 	return nil
 }
 
-func GenerateServers(s *Service) []cchat.Server {
+func GenerateServers(s *Session) []cchat.Server {
 	return generateServers(s, rand.Intn(45))
 }
 
-func generateServers(s *Service, amount int) []cchat.Server {
+func generateServers(s *Session, amount int) []cchat.Server {
 	var channels = make([]cchat.Server, amount)
 	for i := range channels {
 		channels[i] = &Server{

@@ -13,7 +13,7 @@ import (
 )
 
 type Channel struct {
-	session *Service
+	session *Session
 	id      uint32
 	name    string
 	done    chan struct{}
@@ -90,7 +90,7 @@ func (ch *Channel) CompleteMessage(words []string, i int) []string {
 	return words
 }
 
-func generateChannels(s *Service, amount int) []cchat.Server {
+func generateChannels(s *Session, amount int) []cchat.Server {
 	var channels = make([]cchat.Server, amount)
 	for i := range channels {
 		channels[i] = &Channel{

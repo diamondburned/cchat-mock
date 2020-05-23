@@ -6,44 +6,34 @@ import (
 	"strconv"
 
 	"github.com/diamondburned/cchat"
+	"github.com/diamondburned/cchat/services"
 )
 
-type Service struct {
-	username string
-	servers  []cchat.Server
-	lastid   uint32
+func init() {
+	services.RegisterService(&Service{})
 }
+
+type Service struct{}
 
 var (
-	_ cchat.Service       = (*Service)(nil)
-	_ cchat.Authenticator = (*Service)(nil)
-	_ cchat.Configurator  = (*Service)(nil)
+	_ cchat.Service      = (*Service)(nil)
+	_ cchat.Configurator = (*Service)(nil)
 )
 
-func NewService() cchat.Service {
-	return &Service{}
+func (s Service) Name() string {
+	return "Mock"
 }
 
-func (s *Service) AuthenticateForm() []cchat.AuthenticateEntry {
+func (s Service) AuthenticateForm() []cchat.AuthenticateEntry {
 	return []cchat.AuthenticateEntry{{
 		Name: "Username",
 	}}
 }
 
-func (s *Service) Authenticate(form []string) error {
-	s.username = form[0]
-	s.servers = GenerateServers(s)
-
-	return nil
-}
-
-func (s *Service) Name() string {
-	return "Mock backend"
-}
-
-func (s *Service) Servers(container cchat.ServersContainer) error {
-	container.SetServers(s.servers)
-	return nil
+func (s Service) Authenticate(form []string) (cchat.Session, error) {
+	ses := &Session{username: form[0]}
+	ses.servers = GenerateServers(ses)
+	return ses, nil
 }
 
 var (
@@ -54,7 +44,7 @@ var (
 	internetMaxLatency = 2500
 )
 
-func (s *Service) Configuration() (map[string]string, error) {
+func (s Service) Configuration() (map[string]string, error) {
 	return map[string]string{
 		"internet.canFail":    strconv.FormatBool(internetCanFail),
 		"internet.minLatency": strconv.Itoa(internetMinLatency),
@@ -62,7 +52,7 @@ func (s *Service) Configuration() (map[string]string, error) {
 	}, nil
 }
 
-func (s *Service) SetConfiguration(config map[string]string) error {
+func (s Service) SetConfiguration(config map[string]string) error {
 	for _, err := range []error{
 		// shit code, would not recommend. It's only an ok-ish idea here because
 		// unmarshalConfig() returns ErrInvalidConfigAtField.
@@ -83,5 +73,22 @@ func unmarshalConfig(config map[string]string, key string, value interface{}) er
 			Key: key, Err: err,
 		}
 	}
+	return nil
+}
+
+type Session struct {
+	username string
+	servers  []cchat.Server
+	lastid   uint32
+}
+
+var _ cchat.Session = (*Session)(nil)
+
+func (s *Session) Name() (string, error) {
+	return s.username, nil
+}
+
+func (s *Session) Servers(container cchat.ServersContainer) error {
+	container.SetServers(s.servers)
 	return nil
 }
