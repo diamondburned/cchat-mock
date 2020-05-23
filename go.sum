@@ -12,4 +12,6 @@ github.com/diamondburned/cchat v0.0.5 h1:g0+569jnFqx4euNsqjurqjAY+xxG5n8kmGnDRwA
 github.com/diamondburned/cchat v0.0.5/go.mod h1:2MdhWABRer4WhwcuLR0b2VY5S22Y1zDTpFqriAFrC08=
 github.com/diamondburned/cchat v0.0.6 h1:lSIgbxT7C8uSka0wqLl/5kc/8rgsYDfZGxaU346XNeU=
 github.com/diamondburned/cchat v0.0.6/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.7 h1:y5zbEoD6L8YHuN/yclqjokF0lPkRj5tYWOuJe0bBldI=
+github.com/diamondburned/cchat v0.0.7/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
