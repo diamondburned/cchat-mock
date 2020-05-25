@@ -24,13 +24,21 @@ func (s Service) Name() string {
 	return "Mock"
 }
 
-func (s Service) AuthenticateForm() []cchat.AuthenticateEntry {
+func (s Service) Authenticate() cchat.Authenticator {
+	return Authenticator{}
+}
+
+type Authenticator struct{}
+
+var _ cchat.Authenticator = (*Authenticator)(nil)
+
+func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
 	return []cchat.AuthenticateEntry{{
 		Name: "Username",
 	}}
 }
 
-func (s Service) Authenticate(form []string) (cchat.Session, error) {
+func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 	ses := &Session{username: form[0]}
 	ses.servers = GenerateServers(ses)
 	return ses, nil
