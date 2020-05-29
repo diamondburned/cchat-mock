@@ -3,6 +3,7 @@ package mock
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 
 	"github.com/diamondburned/cchat"
@@ -13,15 +14,28 @@ func init() {
 	services.RegisterService(&Service{})
 }
 
+// ErrInvalidSession is returned if SessionRestore is given a bad session.
+var ErrInvalidSession = errors.New("invalid session")
+
 type Service struct{}
 
 var (
-	_ cchat.Service      = (*Service)(nil)
-	_ cchat.Configurator = (*Service)(nil)
+	_ cchat.Service         = (*Service)(nil)
+	_ cchat.Configurator    = (*Service)(nil)
+	_ cchat.SessionRestorer = (*Service)(nil)
 )
 
 func (s Service) Name() string {
 	return "Mock"
+}
+
+func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error) {
+	username, ok := storage["username"]
+	if !ok {
+		return nil, ErrInvalidSession
+	}
+
+	return newSession(username), nil
 }
 
 func (s Service) Authenticate() cchat.Authenticator {
@@ -39,9 +53,7 @@ func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
 }
 
 func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
-	ses := &Session{username: form[0]}
-	ses.servers = GenerateServers(ses)
-	return ses, nil
+	return newSession(form[0]), nil
 }
 
 var (
@@ -87,10 +99,19 @@ func unmarshalConfig(config map[string]string, key string, value interface{}) er
 type Session struct {
 	username string
 	servers  []cchat.Server
-	lastid   uint32
+	lastid   uint32 // used for generation
 }
 
-var _ cchat.Session = (*Session)(nil)
+var (
+	_ cchat.Session      = (*Session)(nil)
+	_ cchat.SessionSaver = (*Session)(nil)
+)
+
+func newSession(username string) *Session {
+	ses := &Session{username: username}
+	ses.servers = GenerateServers(ses)
+	return ses
+}
 
 func (s *Session) Name() (string, error) {
 	return s.username, nil
@@ -99,4 +120,10 @@ func (s *Session) Name() (string, error) {
 func (s *Session) Servers(container cchat.ServersContainer) error {
 	container.SetServers(s.servers)
 	return nil
+}
+
+func (s *Session) Save() (map[string]string, error) {
+	return map[string]string{
+		"username": s.username,
+	}, nil
 }
