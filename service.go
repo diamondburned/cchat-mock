@@ -47,9 +47,19 @@ type Authenticator struct{}
 var _ cchat.Authenticator = (*Authenticator)(nil)
 
 func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
-	return []cchat.AuthenticateEntry{{
-		Name: "Username",
-	}}
+	return []cchat.AuthenticateEntry{
+		{
+			Name: "Username",
+		},
+		{
+			Name:   "Password (ignored)",
+			Secret: true,
+		},
+		{
+			Name:      "Paragraph (ignored)",
+			Multiline: true,
+		},
+	}
 }
 
 func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
@@ -61,7 +71,7 @@ var (
 	internetCanFail = true
 	// 500ms ~ 3s
 	internetMinLatency = 500
-	internetMaxLatency = 2500
+	internetMaxLatency = 3000
 )
 
 func (s Service) Configuration() (map[string]string, error) {
@@ -90,7 +100,8 @@ func (s Service) SetConfiguration(config map[string]string) error {
 func unmarshalConfig(config map[string]string, key string, value interface{}) error {
 	if err := json.Unmarshal([]byte(config[key]), value); err != nil {
 		return &cchat.ErrInvalidConfigAtField{
-			Key: key, Err: err,
+			Key: key,
+			Err: err,
 		}
 	}
 	return nil

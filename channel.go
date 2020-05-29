@@ -104,7 +104,7 @@ func generateChannels(s *Session, amount int) []cchat.Server {
 
 // emulate network latency
 func emulateAustralianInternet() (lost bool) {
-	var ms = rand.Intn(internetMaxLatency) + internetMinLatency
+	var ms = rand.Intn(internetMaxLatency-internetMinLatency) + internetMinLatency
 	<-time.After(time.Duration(ms) * time.Millisecond)
 
 	// because australia, drop packet 20% of the time if internetCanFail is
