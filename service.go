@@ -128,6 +128,10 @@ func (s *Session) Name() (string, error) {
 	return s.username, nil
 }
 
+func (s *Session) UserID() string {
+	return s.username
+}
+
 func (s *Session) Servers(container cchat.ServersContainer) error {
 	container.SetServers(s.servers)
 	return nil
