@@ -17,7 +17,7 @@ type Channel struct {
 	id      uint32
 	name    string
 	done    chan struct{}
-	send    chan Message // ideally this should be another type
+	send    chan cchat.SendableMessage // ideally this should be another type
 	lastID  uint32
 }
 
@@ -37,24 +37,50 @@ func (ch *Channel) Name() (string, error) {
 }
 
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
-	nextid := func() uint32 {
-		return atomic.AddUint32(&ch.lastID, 1)
+	var lastAuthor string
+
+	var nextID = func() uint32 {
+		id := ch.lastID
+		ch.lastID++
+		return id
+	}
+	var readID = func() uint32 {
+		return atomic.LoadUint32(&ch.lastID)
+	}
+	var randomMsg = func() Message {
+		msg := randomMessage(nextID())
+		lastAuthor = msg.author
+		return msg
 	}
 
 	// Write the backlog.
 	for i := 0; i < 30; i++ {
-		container.CreateMessage(randomMessage(nextid()))
+		container.CreateMessage(randomMsg())
 	}
 
 	ch.done = make(chan struct{})
+	ch.send = make(chan cchat.SendableMessage)
+
 	go func() {
-		ticker := time.Tick(10 * time.Second)
+		ticker := time.NewTicker(4 * time.Second)
+		defer ticker.Stop()
+
+		editTick := time.NewTicker(10 * time.Second)
+		defer editTick.Stop()
+
+		deleteTick := time.NewTicker(15 * time.Second)
+		defer deleteTick.Stop()
+
 		for {
 			select {
-			case <-ticker:
-				container.CreateMessage(randomMessage(nextid()))
 			case msg := <-ch.send:
-				container.CreateMessage(msg)
+				container.CreateMessage(echoMessage(msg, nextID(), ch.session.username))
+			case <-ticker.C:
+				container.CreateMessage(randomMsg())
+			case <-editTick.C:
+				container.UpdateMessage(newRandomMessage(readID(), lastAuthor))
+			case <-deleteTick.C:
+				container.DeleteMessage(newEmptyMessage(readID(), lastAuthor))
 			case <-ch.done:
 				return
 			}
@@ -66,6 +92,7 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
 
 func (ch *Channel) LeaveServer() error {
 	ch.done <- struct{}{}
+	ch.send = nil
 	return nil
 }
 
@@ -74,7 +101,13 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 		return errors.New("Failed to send message: Australian Internet unsupported.")
 	}
 
-	ch.send <- echoMessage(msg, atomic.AddUint32(&ch.lastID, 1), ch.session.username)
+	go func() {
+		// Make no guarantee that a message may arrive immediately when the
+		// function exits.
+		<-time.After(time.Second)
+		ch.send <- msg
+	}()
+
 	return nil
 }
 

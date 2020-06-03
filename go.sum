@@ -20,4 +20,10 @@ github.com/diamondburned/cchat v0.0.9 h1:+F96eDDuaOg4v4dz3GBDWbEW4dZ/k5uGrDp33/y
 github.com/diamondburned/cchat v0.0.9/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/diamondburned/cchat v0.0.10 h1:aiUVgGre5E/HV+Iw6tmBVbuGctQI+JndV9nIDoYuRPY=
 github.com/diamondburned/cchat v0.0.10/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.11 h1:0KaR5ISr+8qanItXW538Krdb+ZIarR4j/4GSGqlLjjI=
+github.com/diamondburned/cchat v0.0.11/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.12 h1:ahu5xTRGtMrsudbUy6G2cPIvu0s+3OvXzX5hCxZmADE=
+github.com/diamondburned/cchat v0.0.12/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.13 h1:p8SyFjiRVCTjvwSJ4FsICGVYVZ3g0Iu02FrwmLuKiKE=
+github.com/diamondburned/cchat v0.0.13/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
