@@ -10,15 +10,20 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/diamondburned/cchat"
+	"github.com/diamondburned/cchat-mock/segments"
+	"github.com/diamondburned/cchat/text"
 )
 
+func init() {}
+
 type Channel struct {
-	session *Session
-	id      uint32
-	name    string
-	done    chan struct{}
-	send    chan cchat.SendableMessage // ideally this should be another type
-	lastID  uint32
+	id       uint32
+	name     string
+	username text.Rich
+
+	done   chan struct{}
+	send   chan cchat.SendableMessage // ideally this should be another type
+	lastID uint32
 }
 
 var (
@@ -26,18 +31,25 @@ var (
 	_ cchat.ServerMessage              = (*Channel)(nil)
 	_ cchat.ServerMessageSender        = (*Channel)(nil)
 	_ cchat.ServerMessageSendCompleter = (*Channel)(nil)
+	_ cchat.ServerNickname             = (*Channel)(nil)
 )
 
 func (ch *Channel) ID() string {
 	return strconv.Itoa(int(ch.id))
 }
 
-func (ch *Channel) Name() (string, error) {
-	return ch.name, nil
+func (ch *Channel) Name(labeler cchat.LabelContainer) error {
+	labeler.SetLabel(text.Rich{Content: ch.name})
+	return nil
+}
+
+func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
+	labeler.SetLabel(ch.username)
+	return nil
 }
 
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
-	var lastAuthor string
+	var lastAuthor text.Rich
 
 	var nextID = func() uint32 {
 		id := ch.lastID
@@ -74,7 +86,7 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
 		for {
 			select {
 			case msg := <-ch.send:
-				container.CreateMessage(echoMessage(msg, nextID(), ch.session.username))
+				container.CreateMessage(echoMessage(msg, nextID(), ch.username))
 			case <-ticker.C:
 				container.CreateMessage(randomMsg())
 			case <-editTick.C:
@@ -127,9 +139,13 @@ func generateChannels(s *Session, amount int) []cchat.Server {
 	var channels = make([]cchat.Server, amount)
 	for i := range channels {
 		channels[i] = &Channel{
-			session: s,
-			id:      atomic.AddUint32(&s.lastid, 1),
-			name:    "#" + randomdata.Noun(),
+			id:   atomic.AddUint32(&s.lastid, 1),
+			name: "#" + randomdata.Noun(),
+			username: text.Rich{
+				Content: s.username,
+				// hot pink-ish colored
+				Segments: []text.Segment{segments.NewColored(s.username, 0xE88AF8)},
+			},
 		}
 	}
 	return channels

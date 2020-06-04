@@ -8,6 +8,7 @@ import (
 
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat/services"
+	"github.com/diamondburned/cchat/text"
 )
 
 func init() {
@@ -124,12 +125,13 @@ func newSession(username string) *Session {
 	return ses
 }
 
-func (s *Session) Name() (string, error) {
-	return s.username, nil
+func (s *Session) ID() string {
+	return s.username
 }
 
-func (s *Session) UserID() string {
-	return s.username
+func (s *Session) Name(labeler cchat.LabelContainer) error {
+	labeler.SetLabel(text.Rich{Content: s.username})
+	return nil
 }
 
 func (s *Session) Servers(container cchat.ServersContainer) error {

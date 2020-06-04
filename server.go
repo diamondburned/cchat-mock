@@ -7,6 +7,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/diamondburned/cchat"
+	"github.com/diamondburned/cchat/text"
 )
 
 type Server struct {
@@ -25,8 +26,9 @@ func (sv *Server) ID() string {
 	return strconv.Itoa(int(sv.id))
 }
 
-func (sv *Server) Name() (string, error) {
-	return sv.name, nil
+func (sv *Server) Name(labeler cchat.LabelContainer) error {
+	labeler.SetLabel(text.Rich{Content: sv.name})
+	return nil
 }
 
 func (sv *Server) Servers(container cchat.ServersContainer) error {
@@ -39,14 +41,14 @@ func GenerateServers(s *Session) []cchat.Server {
 }
 
 func generateServers(s *Session, amount int) []cchat.Server {
-	var channels = make([]cchat.Server, amount)
-	for i := range channels {
-		channels[i] = &Server{
+	var servers = make([]cchat.Server, amount)
+	for i := range servers {
+		servers[i] = &Server{
 			session:  s,
 			id:       atomic.AddUint32(&s.lastid, 1),
 			name:     randomdata.Noun(),
 			children: generateChannels(s, rand.Intn(12)),
 		}
 	}
-	return channels
+	return servers
 }

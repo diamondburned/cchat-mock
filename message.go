@@ -7,13 +7,14 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/diamondburned/cchat"
+	"github.com/diamondburned/cchat-mock/segments"
 	"github.com/diamondburned/cchat/text"
 )
 
 type Message struct {
 	id      uint32
 	time    time.Time
-	author  string
+	author  text.Rich
 	content string
 	nonce   string
 }
@@ -26,14 +27,14 @@ var (
 	_ cchat.MessageMentioned = (*Message)(nil)
 )
 
-func newEmptyMessage(id uint32, author string) Message {
+func newEmptyMessage(id uint32, author text.Rich) Message {
 	return Message{
 		id:     id,
 		author: author,
 	}
 }
 
-func newRandomMessage(id uint32, author string) Message {
+func newRandomMessage(id uint32, author text.Rich) Message {
 	return Message{
 		id:      id,
 		time:    time.Now(),
@@ -42,7 +43,7 @@ func newRandomMessage(id uint32, author string) Message {
 	}
 }
 
-func echoMessage(sendable cchat.SendableMessage, id uint32, author string) Message {
+func echoMessage(sendable cchat.SendableMessage, id uint32, author text.Rich) Message {
 	var echo = Message{
 		id:      id,
 		time:    time.Now(),
@@ -57,10 +58,15 @@ func echoMessage(sendable cchat.SendableMessage, id uint32, author string) Messa
 
 func randomMessage(id uint32) Message {
 	var now = time.Now()
+	var author = randomdata.SillyName()
+
 	return Message{
-		id:      id,
-		time:    now,
-		author:  randomdata.SillyName(),
+		id:   id,
+		time: now,
+		author: text.Rich{
+			Content:  author,
+			Segments: []text.Segment{segments.NewRandomColored(author)},
+		},
 		content: randomdata.Paragraph(),
 	}
 }
@@ -88,21 +94,24 @@ func (m Message) Nonce() string {
 // Mentioned is true when the message content contains the author's name.
 func (m Message) Mentioned() bool {
 	// hack
-	return strings.Contains(m.content, m.author)
+	return strings.Contains(m.content, m.author.Content)
 }
 
 type Author struct {
-	name string
+	name text.Rich
 }
 
-var _ cchat.MessageAuthor = (*Author)(nil)
+var (
+	_ cchat.MessageAuthor       = (*Author)(nil)
+	_ cchat.MessageAuthorAvatar = (*Author)(nil)
+)
 
 func (a Author) ID() string {
-	return a.name
+	return a.name.Content
 }
 
 func (a Author) Name() text.Rich {
-	return text.Rich{Content: a.name}
+	return a.name
 }
 
 func (a Author) Avatar() string {
