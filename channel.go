@@ -56,9 +56,6 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
 		ch.lastID++
 		return id
 	}
-	var readID = func() uint32 {
-		return atomic.LoadUint32(&ch.lastID)
-	}
 	var randomMsg = func() Message {
 		msg := randomMessage(nextID())
 		lastAuthor = msg.author
@@ -90,9 +87,9 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
 			case <-ticker.C:
 				container.CreateMessage(randomMsg())
 			case <-editTick.C:
-				container.UpdateMessage(newRandomMessage(readID(), lastAuthor))
+				container.UpdateMessage(newRandomMessage(ch.lastID, lastAuthor))
 			case <-deleteTick.C:
-				container.DeleteMessage(newEmptyMessage(readID(), lastAuthor))
+				container.DeleteMessage(newEmptyMessage(ch.lastID, lastAuthor))
 			case <-ch.done:
 				return
 			}

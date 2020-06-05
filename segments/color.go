@@ -31,7 +31,7 @@ func NewRandomColored(str string) Colored {
 }
 
 func (color Colored) Bounds() (start, end int) {
-	return 0, color.strlen - 1
+	return 0, color.strlen
 }
 
 func (color Colored) Color() uint32 {
