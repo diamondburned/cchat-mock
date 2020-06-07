@@ -37,7 +37,7 @@ func (sv *Server) Servers(container cchat.ServersContainer) error {
 }
 
 func GenerateServers(s *Session) []cchat.Server {
-	return generateServers(s, rand.Intn(45))
+	return generateServers(s, rand.Intn(45)+2)
 }
 
 func generateServers(s *Session, amount int) []cchat.Server {
@@ -47,7 +47,7 @@ func generateServers(s *Session, amount int) []cchat.Server {
 			session:  s,
 			id:       atomic.AddUint32(&s.lastid, 1),
 			name:     randomdata.Noun(),
-			children: generateChannels(s, rand.Intn(12)),
+			children: generateChannels(s, rand.Intn(12)+2),
 		}
 	}
 	return servers

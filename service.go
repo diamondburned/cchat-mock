@@ -31,6 +31,10 @@ func (s Service) Name() string {
 }
 
 func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error) {
+	if emulateAustralianInternet() {
+		return nil, errors.New("Restore failed: server machine broke")
+	}
+
 	username, ok := storage["username"]
 	if !ok {
 		return nil, ErrInvalidSession
@@ -64,6 +68,11 @@ func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
 }
 
 func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
+	// SLOW IO TIME.
+	if emulateAustralianInternet() {
+		return nil, errors.New("Authentication timed out.")
+	}
+
 	return newSession(form[0]), nil
 }
 
@@ -115,6 +124,7 @@ type Session struct {
 }
 
 var (
+	_ cchat.Icon         = (*Session)(nil)
 	_ cchat.Session      = (*Session)(nil)
 	_ cchat.SessionSaver = (*Session)(nil)
 )
@@ -136,6 +146,11 @@ func (s *Session) Name(labeler cchat.LabelContainer) error {
 
 func (s *Session) Servers(container cchat.ServersContainer) error {
 	container.SetServers(s.servers)
+	return nil
+}
+
+func (s *Session) Icon(iconer cchat.IconContainer) error {
+	iconer.SetIcon(avatarURL)
 	return nil
 }
 

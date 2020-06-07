@@ -11,6 +11,8 @@ import (
 	"github.com/diamondburned/cchat/text"
 )
 
+const avatarURL = "https://gist.github.com/diamondburned/945744c2b5ce0aa0581c9267a4e5cf24/raw/598069da673093aaca4cd4aa0ede1a0e324e9a3a/astolfo_selfie.png"
+
 type Message struct {
 	id      uint32
 	time    time.Time
@@ -57,16 +59,21 @@ func echoMessage(sendable cchat.SendableMessage, id uint32, author text.Rich) Me
 }
 
 func randomMessage(id uint32) Message {
-	var now = time.Now()
 	var author = randomdata.SillyName()
 
+	return randomMessageWithAuthor(id, text.Rich{
+		Content:  author,
+		Segments: []text.Segment{segments.NewRandomColored(author)},
+	})
+}
+
+func randomMessageWithAuthor(id uint32, author text.Rich) Message {
+	var now = time.Now()
+
 	return Message{
-		id:   id,
-		time: now,
-		author: text.Rich{
-			Content:  author,
-			Segments: []text.Segment{segments.NewRandomColored(author)},
-		},
+		id:      id,
+		time:    now,
+		author:  author,
 		content: randomdata.Paragraph(),
 	}
 }
@@ -115,5 +122,5 @@ func (a Author) Name() text.Rich {
 }
 
 func (a Author) Avatar() string {
-	return "https://gist.github.com/diamondburned/945744c2b5ce0aa0581c9267a4e5cf24/raw/598069da673093aaca4cd4aa0ede1a0e324e9a3a/astolfo_selfie.png"
+	return avatarURL
 }

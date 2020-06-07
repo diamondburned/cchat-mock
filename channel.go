@@ -49,7 +49,11 @@ func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
 }
 
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
+	// Emulate IO.
+	emulateAustralianInternet()
+
 	var lastAuthor text.Rich
+	var lastCounter int
 
 	var nextID = func() uint32 {
 		id := ch.lastID
@@ -57,8 +61,15 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) error {
 		return id
 	}
 	var randomMsg = func() Message {
+		// Try and reuse the author multiple times.
+		if lastCounter++; lastCounter < randClamp(2, 5) {
+			return randomMessageWithAuthor(nextID(), lastAuthor)
+		}
+
 		msg := randomMessage(nextID())
 		lastAuthor = msg.author
+		lastCounter = 0
+
 		return msg
 	}
 
@@ -148,9 +159,13 @@ func generateChannels(s *Session, amount int) []cchat.Server {
 	return channels
 }
 
+func randClamp(min, max int) int {
+	return rand.Intn(max-min) + min
+}
+
 // emulate network latency
 func emulateAustralianInternet() (lost bool) {
-	var ms = rand.Intn(internetMaxLatency-internetMinLatency) + internetMinLatency
+	var ms = randClamp(internetMinLatency, internetMaxLatency)
 	<-time.After(time.Duration(ms) * time.Millisecond)
 
 	// because australia, drop packet 20% of the time if internetCanFail is
