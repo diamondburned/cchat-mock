@@ -139,9 +139,9 @@ func (s *Session) ID() string {
 	return s.username
 }
 
-func (s *Session) Name(labeler cchat.LabelContainer) error {
+func (s *Session) Name(labeler cchat.LabelContainer) (func(), error) {
 	labeler.SetLabel(text.Rich{Content: s.username})
-	return nil
+	return func() {}, nil
 }
 
 func (s *Session) Servers(container cchat.ServersContainer) error {
@@ -149,9 +149,9 @@ func (s *Session) Servers(container cchat.ServersContainer) error {
 	return nil
 }
 
-func (s *Session) Icon(iconer cchat.IconContainer) error {
+func (s *Session) Icon(iconer cchat.IconContainer) (func(), error) {
 	iconer.SetIcon(avatarURL)
-	return nil
+	return func() {}, nil
 }
 
 func (s *Session) Save() (map[string]string, error) {

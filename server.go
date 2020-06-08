@@ -26,9 +26,9 @@ func (sv *Server) ID() string {
 	return strconv.Itoa(int(sv.id))
 }
 
-func (sv *Server) Name(labeler cchat.LabelContainer) error {
+func (sv *Server) Name(labeler cchat.LabelContainer) (func(), error) {
 	labeler.SetLabel(text.Rich{Content: sv.name})
-	return nil
+	return func() {}, nil
 }
 
 func (sv *Server) Servers(container cchat.ServersContainer) error {
