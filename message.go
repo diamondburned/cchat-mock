@@ -20,6 +20,14 @@ type MessageHeader struct {
 
 var _ cchat.MessageHeader = (*Message)(nil)
 
+func parseID(id string) (uint32, error) {
+	i, err := strconv.Atoi(id)
+	if err != nil {
+		return 0, err
+	}
+	return uint32(i), nil
+}
+
 func (m MessageHeader) ID() string {
 	return strconv.Itoa(int(m.id))
 }

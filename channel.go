@@ -17,6 +17,7 @@ import (
 
 // FetchBacklog is the number of messages to fake-fetch.
 const FetchBacklog = 35
+const maxBacklog = FetchBacklog * 2
 
 // max number to add to before the next author, with rand.Intn(limit) + incr.
 const sameAuthorLimit = 12
@@ -30,8 +31,8 @@ type Channel struct {
 	edit chan Message               // id
 
 	messageMutex sync.Mutex
-	messageIDs   map[string]int
 	messages     []Message
+	messageixs   map[uint32]int // indices
 
 	// used for unique ID generation of messages
 	incrID uint32
@@ -39,7 +40,6 @@ type Channel struct {
 	// up to about 12 or so. check sameAuthorLimit.
 	incrAuthor uint8
 
-	//
 	busyWg sync.WaitGroup
 }
 
@@ -57,24 +57,26 @@ func (ch *Channel) ID() string {
 	return strconv.Itoa(int(ch.id))
 }
 
-func (ch *Channel) Name(labeler cchat.LabelContainer) (func(), error) {
-	labeler.SetLabel(text.Rich{Content: ch.name})
-	return func() {}, nil
+func (ch *Channel) Name() text.Rich {
+	return text.Rich{Content: ch.name}
 }
 
-func (ch *Channel) Nickname(labeler cchat.LabelContainer) (func(), error) {
+func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
+	// Simulate IO.
+	simulateAustralianInternet()
+
 	labeler.SetLabel(ch.username)
-	return func() {}, nil
+	return nil
 }
 
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) (func(), error) {
 	// Is this a fresh channel? If yes, generate messages with some IO latency.
-	if ch.messageIDs == nil || len(ch.messages) == 0 {
-		// Emulate IO.
-		emulateAustralianInternet()
+	if len(ch.messages) == 0 || ch.messageixs == nil {
+		// Simulate IO.
+		simulateAustralianInternet()
 
 		// Initialize.
-		ch.messageIDs = map[string]int{}
+		ch.messageixs = make(map[uint32]int, FetchBacklog)
 		ch.messages = make([]Message, 0, FetchBacklog)
 
 		// Allocate 2 channels that we won't clean up, because we're lazy.
@@ -84,6 +86,11 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (func(), error)
 		// Generate the backlog.
 		for i := 0; i < FetchBacklog; i++ {
 			ch.addMessage(randomMessage(ch.nextID()), container)
+		}
+	} else {
+		// Else, flush the old backlog over.
+		for i := range ch.messages {
+			container.CreateMessage(ch.messages[i])
 		}
 	}
 
@@ -129,10 +136,15 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (func(), error)
 }
 
 func (ch *Channel) RawMessageContent(id string) (string, error) {
+	i, err := parseID(id)
+	if err != nil {
+		return "", err
+	}
+
 	ch.messageMutex.Lock()
 	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageIDs[id]
+	ix, ok := ch.messageixs[i]
 	if !ok {
 		return "", errors.New("Message not found")
 	}
@@ -141,63 +153,81 @@ func (ch *Channel) RawMessageContent(id string) (string, error) {
 }
 
 func (ch *Channel) EditMessage(id, content string) error {
-	emulateAustralianInternet()
+	i, err := parseID(id)
+	if err != nil {
+		return err
+	}
+
+	simulateAustralianInternet()
 
 	ch.messageMutex.Lock()
 	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageIDs[id]
+	ix, ok := ch.messageixs[i]
 	if !ok {
-		return errors.New("ID not found")
+		return errors.New("Message not found.")
 	}
 
-	msg := ch.messages[ix]
-	msg.content = content
+	m := ch.messages[ix]
+	m.content = content
 
-	ch.messages[ix] = msg
-	ch.edit <- msg
+	ch.messages[ix] = m
+	ch.edit <- m
 
 	return nil
 }
 
 func (ch *Channel) addMessage(msg Message, container cchat.MessagesContainer) {
 	ch.messageMutex.Lock()
-	defer ch.messageMutex.Unlock()
 
 	// Clean up the backlog.
-	if len(ch.messages) > FetchBacklog*2 {
+	if clean := len(ch.messages) - maxBacklog; clean > 0 {
+		// Remove them from the map.
+		for _, m := range ch.messages[:clean] {
+			delete(ch.messageixs, m.id)
+		}
 
+		// Cut the message IDs away by shifting the slice.
+		ch.messages = append(ch.messages[:0], ch.messages[clean:]...)
 	}
+
+	ch.messageixs[msg.id] = len(ch.messages)
 	ch.messages = append(ch.messages, msg)
+
+	ch.messageMutex.Unlock()
+
 	container.CreateMessage(msg)
 }
 
 func (ch *Channel) updateMessage(msg Message, container cchat.MessagesContainer) {
 	ch.messageMutex.Lock()
-	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageIDs[msg.ID()]
-	if !ok {
-		// Unknown message.
-		return
+	i, ok := ch.messageixs[msg.id]
+	if ok {
+		ch.messages[i] = msg
 	}
 
-	ch.messages[ix] = msg
-	container.UpdateMessage(msg)
+	ch.messageMutex.Unlock()
+
+	if ok {
+		container.UpdateMessage(msg)
+	}
 }
 
 func (ch *Channel) deleteMessage(msg MessageHeader, container cchat.MessagesContainer) {
 	ch.messageMutex.Lock()
-	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageIDs[msg.ID()]
-	if !ok {
-		return
+	i, ok := ch.messageixs[msg.id]
+	if ok {
+		ch.messages = append(ch.messages[:i], ch.messages[i+1:]...)
+		delete(ch.messageixs, msg.id)
 	}
 
-	delete(ch.messageIDs, msg.ID())
-	ch.messages = append(ch.messages[:ix], ch.messages[ix+1:]...)
-	container.DeleteMessage(msg)
+	ch.messageMutex.Unlock()
+
+	if ok {
+		container.DeleteMessage(msg)
+	}
 }
 
 // randomMsgID returns a random recent message ID.
@@ -228,6 +258,7 @@ func (ch *Channel) randomMsg() (msg Message) {
 	// Should we generate a new author for the new message?
 	if ch.incrAuthor > sameAuthorLimit {
 		msg = randomMessage(ch.nextID())
+		ch.incrAuthor = 0 // reset
 	} else {
 		last := ch.messages[len(ch.messages)-1]
 		msg = randomMessageWithAuthor(ch.nextID(), last.author)
@@ -241,7 +272,7 @@ func (ch *Channel) nextID() (id uint32) {
 }
 
 func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
-	if emulateAustralianInternet() {
+	if simulateAustralianInternet() {
 		return errors.New("Failed to send message: Australian Internet unsupported.")
 	}
 
@@ -258,7 +289,7 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 const (
 	DeleteAction   = "Delete"
 	NoopAction     = "No-op"
-	BestTrapAction = "Print best trap"
+	BestTrapAction = "What's the best trap?"
 )
 
 func (ch *Channel) MessageActions() []string {
@@ -279,8 +310,8 @@ func (ch *Channel) DoMessageAction(c cchat.MessagesContainer, action, messageID 
 			return errors.Wrap(err, "Invalid ID")
 		}
 
-		// Emulate IO.
-		emulateAustralianInternet()
+		// Simulate IO.
+		simulateAustralianInternet()
 		ch.deleteMessage(MessageHeader{uint32(i), time.Now()}, c)
 
 	case NoopAction:
@@ -321,6 +352,7 @@ func generateChannels(s *Session, amount int) []cchat.Server {
 			},
 		}
 	}
+
 	return channels
 }
 
@@ -328,8 +360,8 @@ func randClamp(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-// emulate network latency
-func emulateAustralianInternet() (lost bool) {
+// simulate network latency
+func simulateAustralianInternet() (lost bool) {
 	var ms = randClamp(internetMinLatency, internetMaxLatency)
 	<-time.After(time.Duration(ms) * time.Millisecond)
 

@@ -4,6 +4,6 @@ go 1.14
 
 require (
 	github.com/Pallinder/go-randomdata v1.2.0
-	github.com/diamondburned/cchat v0.0.19
+	github.com/diamondburned/cchat v0.0.22
 	github.com/pkg/errors v0.9.1
 )

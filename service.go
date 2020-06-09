@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat/services"
@@ -26,12 +27,12 @@ var (
 	_ cchat.SessionRestorer = (*Service)(nil)
 )
 
-func (s Service) Name() string {
-	return "Mock"
+func (s Service) Name() text.Rich {
+	return text.Rich{Content: "Mock"}
 }
 
 func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error) {
-	if emulateAustralianInternet() {
+	if simulateAustralianInternet() {
 		return nil, errors.New("Restore failed: server machine broke")
 	}
 
@@ -69,7 +70,7 @@ func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
 
 func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 	// SLOW IO TIME.
-	if emulateAustralianInternet() {
+	if simulateAustralianInternet() {
 		return nil, errors.New("Authentication timed out.")
 	}
 
@@ -77,7 +78,7 @@ func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 }
 
 var (
-	// channel.go @ emulateAustralianInternet
+	// channel.go @ simulateAustralianInternet
 	internetCanFail = true
 	// 500ms ~ 3s
 	internetMinLatency = 500
@@ -139,19 +140,24 @@ func (s *Session) ID() string {
 	return s.username
 }
 
-func (s *Session) Name(labeler cchat.LabelContainer) (func(), error) {
-	labeler.SetLabel(text.Rich{Content: s.username})
-	return func() {}, nil
+func (s *Session) Name() text.Rich {
+	return text.Rich{Content: s.username}
 }
 
 func (s *Session) Servers(container cchat.ServersContainer) error {
+	// Simulate slight IO.
+	<-time.After(time.Second)
+
 	container.SetServers(s.servers)
 	return nil
 }
 
-func (s *Session) Icon(iconer cchat.IconContainer) (func(), error) {
+func (s *Session) Icon(iconer cchat.IconContainer) error {
+	// Simulate IO.
+	simulateAustralianInternet()
+
 	iconer.SetIcon(avatarURL)
-	return func() {}, nil
+	return nil
 }
 
 func (s *Session) Save() (map[string]string, error) {
