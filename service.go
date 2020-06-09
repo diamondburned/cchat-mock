@@ -3,13 +3,13 @@ package mock
 
 import (
 	"encoding/json"
-	"errors"
 	"strconv"
 	"time"
 
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat/services"
 	"github.com/diamondburned/cchat/text"
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -32,8 +32,8 @@ func (s Service) Name() text.Rich {
 }
 
 func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error) {
-	if simulateAustralianInternet() {
-		return nil, errors.New("Restore failed: server machine broke")
+	if err := simulateAustralianInternet(); err != nil {
+		return nil, errors.Wrap(err, "Restore failed")
 	}
 
 	username, ok := storage["username"]
@@ -70,8 +70,8 @@ func (Authenticator) AuthenticateForm() []cchat.AuthenticateEntry {
 
 func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 	// SLOW IO TIME.
-	if simulateAustralianInternet() {
-		return nil, errors.New("Authentication timed out.")
+	if err := simulateAustralianInternet(); err != nil {
+		return nil, errors.Wrap(err, "Authentication failed")
 	}
 
 	return newSession(form[0]), nil
