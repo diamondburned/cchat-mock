@@ -32,8 +32,8 @@ type Channel struct {
 	edit chan Message               // id
 
 	messageMutex sync.Mutex
-	messages     []Message
-	messageixs   map[uint32]int // indices
+	messages     map[uint32]Message
+	messageids   []uint32 // indices
 
 	// used for unique ID generation of messages
 	incrID uint32
@@ -83,13 +83,13 @@ func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
 
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), err error) {
 	// Is this a fresh channel? If yes, generate messages with some IO latency.
-	if len(ch.messages) == 0 || ch.messageixs == nil {
+	if len(ch.messageids) == 0 || ch.messages == nil {
 		// Simulate IO.
 		simulateAustralianInternet()
 
 		// Initialize.
-		ch.messageixs = make(map[uint32]int, FetchBacklog)
-		ch.messages = make([]Message, 0, FetchBacklog)
+		ch.messages = make(map[uint32]Message, FetchBacklog)
+		ch.messageids = make([]uint32, 0, FetchBacklog)
 
 		// Allocate 2 channels that we won't clean up, because we're lazy.
 		ch.send = make(chan cchat.SendableMessage)
@@ -97,7 +97,7 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), e
 
 		// Generate the backlog.
 		for i := 0; i < FetchBacklog; i++ {
-			ch.addMessage(randomMessage(ch.nextID()), container)
+			ch.addMessage(ch.randomMsg(), container)
 		}
 	} else {
 		// Else, flush the old backlog over.
@@ -156,12 +156,12 @@ func (ch *Channel) RawMessageContent(id string) (string, error) {
 	ch.messageMutex.Lock()
 	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageixs[i]
-	if !ok {
-		return "", errors.New("Message not found")
+	m, ok := ch.messages[i]
+	if ok {
+		return m.content, nil
 	}
 
-	return ch.messages[ix].content, nil
+	return "", errors.New("Message not found")
 }
 
 func (ch *Channel) EditMessage(id, content string) error {
@@ -175,18 +175,16 @@ func (ch *Channel) EditMessage(id, content string) error {
 	ch.messageMutex.Lock()
 	defer ch.messageMutex.Unlock()
 
-	ix, ok := ch.messageixs[i]
-	if !ok {
-		return errors.New("Message not found.")
+	m, ok := ch.messages[i]
+	if ok {
+		m.content = content
+		ch.messages[i] = m
+		ch.edit <- m
+
+		return nil
 	}
 
-	m := ch.messages[ix]
-	m.content = content
-
-	ch.messages[ix] = m
-	ch.edit <- m
-
-	return nil
+	return errors.New("Message not found.")
 }
 
 func (ch *Channel) addMessage(msg Message, container cchat.MessagesContainer) {
@@ -195,16 +193,16 @@ func (ch *Channel) addMessage(msg Message, container cchat.MessagesContainer) {
 	// Clean up the backlog.
 	if clean := len(ch.messages) - maxBacklog; clean > 0 {
 		// Remove them from the map.
-		for _, m := range ch.messages[:clean] {
-			delete(ch.messageixs, m.id)
+		for _, id := range ch.messageids[:clean] {
+			delete(ch.messages, id)
 		}
 
 		// Cut the message IDs away by shifting the slice.
-		ch.messages = append(ch.messages[:0], ch.messages[clean:]...)
+		ch.messageids = append(ch.messageids[:0], ch.messageids[clean:]...)
 	}
 
-	ch.messageixs[msg.id] = len(ch.messages)
-	ch.messages = append(ch.messages, msg)
+	ch.messages[msg.id] = msg
+	ch.messageids = append(ch.messageids, msg.id)
 
 	ch.messageMutex.Unlock()
 
@@ -214,9 +212,9 @@ func (ch *Channel) addMessage(msg Message, container cchat.MessagesContainer) {
 func (ch *Channel) updateMessage(msg Message, container cchat.MessagesContainer) {
 	ch.messageMutex.Lock()
 
-	i, ok := ch.messageixs[msg.id]
+	_, ok := ch.messages[msg.id]
 	if ok {
-		ch.messages[i] = msg
+		ch.messages[msg.id] = msg
 	}
 
 	ch.messageMutex.Unlock()
@@ -229,10 +227,17 @@ func (ch *Channel) updateMessage(msg Message, container cchat.MessagesContainer)
 func (ch *Channel) deleteMessage(msg MessageHeader, container cchat.MessagesContainer) {
 	ch.messageMutex.Lock()
 
-	i, ok := ch.messageixs[msg.id]
-	if ok {
-		ch.messages = append(ch.messages[:i], ch.messages[i+1:]...)
-		delete(ch.messageixs, msg.id)
+	// Delete from the map.
+	delete(ch.messages, msg.id)
+
+	// Delete from the ordered slice.
+	var ok bool
+	for i, id := range ch.messageids {
+		if id == msg.id {
+			ch.messageids = append(ch.messageids[:i], ch.messageids[i+1:]...)
+			ok = true
+			break
+		}
 	}
 
 	ch.messageMutex.Unlock()
@@ -248,8 +253,8 @@ func (ch *Channel) randomOldMsg() Message {
 	defer ch.messageMutex.Unlock()
 
 	// Pick a random number, clamped to 10 and len channel.
-	n := rand.Intn(len(ch.messages)) % 10
-	return ch.messages[n]
+	n := rand.Intn(len(ch.messageids)) % 10
+	return ch.messages[ch.messageids[n]]
 }
 
 // randomMsg uses top of the state algorithms to return fair and balanced
@@ -267,13 +272,17 @@ func (ch *Channel) randomMsg() (msg Message) {
 	// enough to generate a new author.
 	ch.incrAuthor += uint8(rand.Intn(5)) // 2~4 appearances
 
-	// Should we generate a new author for the new message?
-	if ch.incrAuthor > sameAuthorLimit {
+	var lastID = ch.messageids[len(ch.messageids)-1]
+	var last = ch.messages[lastID]
+
+	// If the last author is not the current user, then we can use it.
+	// Should we generate a new author for the new message? No if we're not over
+	// the limits.
+	if last.author.Content != ch.username.Content && ch.incrAuthor < sameAuthorLimit {
+		msg = randomMessageWithAuthor(ch.nextID(), last.author)
+	} else {
 		msg = randomMessage(ch.nextID())
 		ch.incrAuthor = 0 // reset
-	} else {
-		last := ch.messages[len(ch.messages)-1]
-		msg = randomMessageWithAuthor(ch.nextID(), last.author)
 	}
 
 	return
@@ -339,16 +348,63 @@ func (ch *Channel) DoMessageAction(c cchat.MessagesContainer, action, messageID 
 	return nil
 }
 
-func (ch *Channel) CompleteMessage(words []string, i int) []string {
+func (ch *Channel) CompleteMessage(words []string, i int) (entries []cchat.CompletionEntry) {
 	switch {
 	case strings.HasPrefix("complete", words[i]):
-		words[i] = "complete"
-	case strings.HasPrefix("me", words[i]) && i > 0 && words[i-1] == "complete":
-		words[i] = "me"
+		entries = makeCompletion(
+			"complete",
+			"complete me",
+			"complete you",
+			"complete everyone",
+		)
+
+	case lookbackCheck(words, i, "complete", "me"):
+		entries = makeCompletion("me")
+
+	case lookbackCheck(words, i, "complete", "you"):
+		entries = makeCompletion("you")
+
+	case lookbackCheck(words, i, "complete", "everyone"):
+		entries = makeCompletion("everyone")
+
+	case lookbackCheck(words, i, "best", "trap:"):
+		entries = makeCompletion(
+			"trap: Astolfo",
+			"trap: Hackadoll No. 3",
+			"trap: Totsuka",
+			"trap: Felix Argyle",
+		)
+
 	default:
-		return nil
+		ch.messageMutex.Lock()
+		defer ch.messageMutex.Unlock()
+
+		// Look for members.
+		for _, id := range ch.messageids {
+			if msg := ch.messages[id]; strings.HasPrefix(msg.author.Content, words[i]) {
+				entries = append(entries, cchat.CompletionEntry{
+					Text:    msg.author,
+					IconURL: avatarURL,
+				})
+			}
+		}
 	}
-	return words
+
+	return
+}
+
+func makeCompletion(word ...string) []cchat.CompletionEntry {
+	var entries = make([]cchat.CompletionEntry, len(word))
+	for i, w := range word {
+		entries[i].Text.Content = w
+		entries[i].IconURL = avatarURL
+	}
+	return entries
+}
+
+// completion will only override `this'.
+func lookbackCheck(words []string, i int, prev, this string) bool {
+	return strings.HasPrefix(this, words[i]) && i > 0 && words[i-1] == prev
 }
 
 func generateChannels(s *Session, amount int) []cchat.Server {
