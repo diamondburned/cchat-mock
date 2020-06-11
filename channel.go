@@ -396,6 +396,7 @@ func (ch *Channel) CompleteMessage(words []string, i int) (entries []cchat.Compl
 func makeCompletion(word ...string) []cchat.CompletionEntry {
 	var entries = make([]cchat.CompletionEntry, len(word))
 	for i, w := range word {
+		entries[i].Raw = w
 		entries[i].Text.Content = w
 		entries[i].IconURL = avatarURL
 	}
