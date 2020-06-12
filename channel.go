@@ -84,8 +84,10 @@ func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
 func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), err error) {
 	// Is this a fresh channel? If yes, generate messages with some IO latency.
 	if len(ch.messageids) == 0 || ch.messages == nil {
-		// Simulate IO.
-		simulateAustralianInternet()
+		// Simulate IO and error.
+		if err := simulateAustralianInternet(); err != nil {
+			return nil, err
+		}
 
 		// Initialize.
 		ch.messages = make(map[uint32]Message, FetchBacklog)
@@ -383,6 +385,7 @@ func (ch *Channel) CompleteMessage(words []string, i int) (entries []cchat.Compl
 		for _, id := range ch.messageids {
 			if msg := ch.messages[id]; strings.HasPrefix(msg.author.Content, words[i]) {
 				entries = append(entries, cchat.CompletionEntry{
+					Raw:     msg.author.Content,
 					Text:    msg.author,
 					IconURL: avatarURL,
 				})
