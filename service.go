@@ -144,6 +144,11 @@ func (s *Session) Name() text.Rich {
 	return text.Rich{Content: s.username}
 }
 
+func (s *Session) Disconnect() error {
+	// Nothing to do here, but emulate errors.
+	return simulateAustralianInternet()
+}
+
 func (s *Session) Servers(container cchat.ServersContainer) error {
 	// Simulate slight IO.
 	<-time.After(time.Second)
