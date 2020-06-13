@@ -254,8 +254,8 @@ func (ch *Channel) randomOldMsg() Message {
 	ch.messageMutex.Lock()
 	defer ch.messageMutex.Unlock()
 
-	// Pick a random number, clamped to 10 and len channel.
-	n := rand.Intn(len(ch.messageids)) % 10
+	// Pick a random index from last, clamped to 10 and len channel.
+	n := len(ch.messageids) - rand.Intn(len(ch.messageids))%10
 	return ch.messages[ch.messageids[n]]
 }
 
