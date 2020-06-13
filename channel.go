@@ -118,8 +118,8 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), e
 		editTick := time.NewTicker(10 * time.Second)
 		defer editTick.Stop()
 
-		deleteTick := time.NewTicker(15 * time.Second)
-		defer deleteTick.Stop()
+		// deleteTick := time.NewTicker(15 * time.Second)
+		// defer deleteTick.Stop()
 
 		for {
 			select {
@@ -136,9 +136,9 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), e
 				var old = ch.randomOldMsg()
 				ch.updateMessage(newRandomMessage(old.id, old.author), container)
 
-			case <-deleteTick.C:
-				var old = ch.randomOldMsg()
-				ch.deleteMessage(MessageHeader{old.id, time.Now()}, container)
+			// case <-deleteTick.C:
+			// 	var old = ch.randomOldMsg()
+			// 	ch.deleteMessage(MessageHeader{old.id, time.Now()}, container)
 
 			case <-ch.ctx.Done():
 				return
