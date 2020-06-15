@@ -30,6 +30,7 @@ type Channel struct {
 
 	send chan cchat.SendableMessage // ideally this should be another type
 	edit chan Message               // id
+	del  chan MessageHeader
 
 	messageMutex sync.Mutex
 	messages     map[uint32]Message
@@ -40,9 +41,6 @@ type Channel struct {
 	// used for generating the same author multiple times before shuffling, goes
 	// up to about 12 or so. check sameAuthorLimit.
 	incrAuthor uint8
-
-	// single-use write-once context, written on every JoinServer
-	ctx context.Context
 }
 
 var (
@@ -66,11 +64,9 @@ func (ch *Channel) Name() text.Rich {
 // Nickname sets the labeler to the nickname. It simulates heavy IO. This
 // function stops as cancel is called in JoinServer, as Nickname is specially
 // for that.
-func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
-	// Borrow the parent's context and stop fetching if the context expires.
-	ctx, cancel := context.WithCancel(ch.ctx)
-	defer cancel()
-
+//
+// The given context is cancelled.
+func (ch *Channel) Nickname(ctx context.Context, labeler cchat.LabelContainer) error {
 	// Simulate IO with cancellation. Ignore the error if it's a simulated time
 	// out, else return.
 	if err := simulateAustralianInternetCtx(ctx); err != nil && err != ErrTimedOut {
@@ -81,11 +77,11 @@ func (ch *Channel) Nickname(labeler cchat.LabelContainer) error {
 	return nil
 }
 
-func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), err error) {
+func (ch *Channel) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (func(), error) {
 	// Is this a fresh channel? If yes, generate messages with some IO latency.
 	if len(ch.messageids) == 0 || ch.messages == nil {
 		// Simulate IO and error.
-		if err := simulateAustralianInternet(); err != nil {
+		if err := simulateAustralianInternetCtx(ctx); err != nil {
 			return nil, err
 		}
 
@@ -93,23 +89,25 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), e
 		ch.messages = make(map[uint32]Message, FetchBacklog)
 		ch.messageids = make([]uint32, 0, FetchBacklog)
 
-		// Allocate 2 channels that we won't clean up, because we're lazy.
+		// Allocate 3 channels that we won't clean up, because we're lazy.
 		ch.send = make(chan cchat.SendableMessage)
 		ch.edit = make(chan Message)
+		ch.del = make(chan MessageHeader)
 
 		// Generate the backlog.
 		for i := 0; i < FetchBacklog; i++ {
-			ch.addMessage(ch.randomMsg(), container)
+			ch.addMessage(ch.randomMsg(), ct)
 		}
 	} else {
 		// Else, flush the old backlog over.
 		for i := range ch.messages {
-			container.CreateMessage(ch.messages[i])
+			ct.CreateMessage(ch.messages[i])
 		}
 	}
 
-	// Initialize context for cancellation.
-	ch.ctx, stop = context.WithCancel(context.Background())
+	// Initialize context for cancellation. The context passed in is used only
+	// for initialization, so we'll use our own context for the loop.
+	ctx, stop := context.WithCancel(context.Background())
 
 	go func() {
 		ticker := time.NewTicker(4 * time.Second)
@@ -124,29 +122,32 @@ func (ch *Channel) JoinServer(container cchat.MessagesContainer) (stop func(), e
 		for {
 			select {
 			case msg := <-ch.send:
-				ch.addMessage(echoMessage(msg, ch.nextID(), ch.username), container)
+				ch.addMessage(echoMessage(msg, ch.nextID(), ch.username), ct)
 
 			case msg := <-ch.edit:
-				container.UpdateMessage(msg)
+				ct.UpdateMessage(msg)
+
+			case msh := <-ch.del:
+				ch.deleteMessage(msh, ct)
 
 			case <-ticker.C:
-				ch.addMessage(ch.randomMsg(), container)
+				ch.addMessage(ch.randomMsg(), ct)
 
 			case <-editTick.C:
 				var old = ch.randomOldMsg()
-				ch.updateMessage(newRandomMessage(old.id, old.author), container)
+				ch.updateMessage(newRandomMessage(old.id, old.author), ct)
 
 			// case <-deleteTick.C:
 			// 	var old = ch.randomOldMsg()
 			// 	ch.deleteMessage(MessageHeader{old.id, time.Now()}, container)
 
-			case <-ch.ctx.Done():
+			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	return
+	return stop, nil
 }
 
 func (ch *Channel) RawMessageContent(id string) (string, error) {
@@ -325,7 +326,7 @@ func (ch *Channel) MessageActions() []string {
 
 // DoMessageAction will be blocked by IO. As goes for every other method that
 // takes a container: the frontend should call this in a goroutine.
-func (ch *Channel) DoMessageAction(c cchat.MessagesContainer, action, messageID string) error {
+func (ch *Channel) DoMessageAction(action, messageID string) error {
 	switch action {
 	case DeleteAction:
 		i, err := strconv.Atoi(messageID)
@@ -335,7 +336,7 @@ func (ch *Channel) DoMessageAction(c cchat.MessagesContainer, action, messageID 
 
 		// Simulate IO.
 		simulateAustralianInternet()
-		ch.deleteMessage(MessageHeader{uint32(i), time.Now()}, c)
+		ch.del <- MessageHeader{uint32(i), time.Now()}
 
 	case NoopAction:
 		// do nothing.

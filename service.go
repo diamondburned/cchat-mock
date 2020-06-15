@@ -2,6 +2,7 @@
 package mock
 
 import (
+	"context"
 	"encoding/json"
 	"strconv"
 	"time"
@@ -127,6 +128,7 @@ type Session struct {
 var (
 	_ cchat.Icon         = (*Session)(nil)
 	_ cchat.Session      = (*Session)(nil)
+	_ cchat.ServerList   = (*Session)(nil)
 	_ cchat.SessionSaver = (*Session)(nil)
 )
 
@@ -157,8 +159,8 @@ func (s *Session) Servers(container cchat.ServersContainer) error {
 	return nil
 }
 
-func (s *Session) Icon(iconer cchat.IconContainer) error {
-	// Simulate IO.
+func (s *Session) Icon(ctx context.Context, iconer cchat.IconContainer) error {
+	// Simulate IO while ignoring the context.
 	simulateAustralianInternet()
 
 	iconer.SetIcon(avatarURL)
