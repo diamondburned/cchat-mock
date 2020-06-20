@@ -316,7 +316,7 @@ const (
 	BestTrapAction = "What's the best trap?"
 )
 
-func (ch *Channel) MessageActions() []string {
+func (ch *Channel) MessageActions(id string) []string {
 	return []string{
 		DeleteAction,
 		NoopAction,

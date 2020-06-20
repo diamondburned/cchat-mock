@@ -31,6 +31,11 @@ func (sv *Server) Name() text.Rich {
 }
 
 func (sv *Server) Servers(container cchat.ServersContainer) error {
+	// IO time.
+	if err := simulateAustralianInternet(); err != nil {
+		return err
+	}
+
 	container.SetServers(sv.children)
 	return nil
 }
