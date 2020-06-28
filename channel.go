@@ -150,6 +150,25 @@ func (ch *Channel) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (
 	return stop, nil
 }
 
+// MessageEditable returns true if the message belongs to the author.
+func (ch *Channel) MessageEditable(id string) bool {
+	i, err := parseID(id)
+	if err != nil {
+		return false
+	}
+
+	ch.messageMutex.Lock()
+	defer ch.messageMutex.Unlock()
+
+	m, ok := ch.messages[i]
+	if ok {
+		// Editable if same author.
+		return m.author.Content == ch.username.Content
+	}
+
+	return false
+}
+
 func (ch *Channel) RawMessageContent(id string) (string, error) {
 	i, err := parseID(id)
 	if err != nil {

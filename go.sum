@@ -56,6 +56,8 @@ github.com/diamondburned/cchat v0.0.28 h1:+1VnltW0rl8/NZTUP+x89jVhi3YTTR+e6iLprZ
 github.com/diamondburned/cchat v0.0.28/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/diamondburned/cchat v0.0.34 h1:BGiVxMRA9dmW3rLilIldBvjVan7eTTpaWCCfX9IKBYU=
 github.com/diamondburned/cchat v0.0.34/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.35 h1:WiMGl8BQJgbP9E4xRxgLGlqUsHpTcJgDKDt8/6a7lBk=
+github.com/diamondburned/cchat v0.0.35/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/lucasb-eyer/go-colorful v1.0.3 h1:QIbQXiugsb+q10B+MI+7DI1oQLdmnep86tWFlaaUAac=
 github.com/lucasb-eyer/go-colorful v1.0.3/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
