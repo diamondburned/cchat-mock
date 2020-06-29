@@ -66,15 +66,15 @@ func (ch *Channel) Name() text.Rich {
 // for that.
 //
 // The given context is cancelled.
-func (ch *Channel) Nickname(ctx context.Context, labeler cchat.LabelContainer) error {
+func (ch *Channel) Nickname(ctx context.Context, labeler cchat.LabelContainer) (func(), error) {
 	// Simulate IO with cancellation. Ignore the error if it's a simulated time
 	// out, else return.
 	if err := simulateAustralianInternetCtx(ctx); err != nil && err != ErrTimedOut {
-		return err
+		return nil, err
 	}
 
 	labeler.SetLabel(ch.username)
-	return nil
+	return func() {}, nil
 }
 
 func (ch *Channel) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (func(), error) {

@@ -159,12 +159,12 @@ func (s *Session) Servers(container cchat.ServersContainer) error {
 	return nil
 }
 
-func (s *Session) Icon(ctx context.Context, iconer cchat.IconContainer) error {
+func (s *Session) Icon(ctx context.Context, iconer cchat.IconContainer) (func(), error) {
 	// Simulate IO while ignoring the context.
 	simulateAustralianInternet()
 
 	iconer.SetIcon(avatarURL)
-	return nil
+	return func() {}, nil
 }
 
 func (s *Session) Save() (map[string]string, error) {
