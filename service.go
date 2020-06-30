@@ -4,9 +4,13 @@ package mock
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/Pallinder/go-randomdata"
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat/services"
 	"github.com/diamondburned/cchat/text"
@@ -126,10 +130,12 @@ type Session struct {
 }
 
 var (
-	_ cchat.Icon         = (*Session)(nil)
-	_ cchat.Session      = (*Session)(nil)
-	_ cchat.ServerList   = (*Session)(nil)
-	_ cchat.SessionSaver = (*Session)(nil)
+	_ cchat.Icon             = (*Session)(nil)
+	_ cchat.Session          = (*Session)(nil)
+	_ cchat.ServerList       = (*Session)(nil)
+	_ cchat.SessionSaver     = (*Session)(nil)
+	_ cchat.Commander        = (*Session)(nil)
+	_ cchat.CommandCompleter = (*Session)(nil)
 )
 
 func newSession(username string) *Session {
@@ -171,4 +177,94 @@ func (s *Session) Save() (map[string]string, error) {
 	return map[string]string{
 		"username": s.username,
 	}, nil
+}
+
+func (s *Session) RunCommand(cmds []string) (io.ReadCloser, error) {
+	var r, w = io.Pipe()
+
+	switch cmd := arg(cmds, 0); cmd {
+	case "ls":
+		go func() {
+			fmt.Fprintln(w, "Commands: ls, random")
+			w.Close()
+		}()
+
+	case "random":
+		// callback used to generate stuff and stream into readcloser
+		var generator func() string
+		// number of times to generate the word
+		var times = 1
+
+		switch arg(cmds, 1) {
+		case "paragraph":
+			generator = randomdata.Paragraph
+		case "noun":
+			generator = randomdata.Noun
+		case "silly_name":
+			generator = randomdata.SillyName
+		default:
+			return nil, errors.New("Usage: random <paragraph|noun|silly_name> [repeat]")
+		}
+
+		if n := arg(cmds, 2); n != "" {
+			i, err := strconv.Atoi(n)
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to parse repeat number")
+			}
+			times = i
+		}
+
+		go func() {
+			defer w.Close()
+
+			for i := 0; i < times; i++ {
+				// Yes, we're simulating this even in something as trivial as a
+				// command prompt.
+				if err := simulateAustralianInternet(); err != nil {
+					fmt.Fprintln(w, "Error:", err)
+					continue
+				}
+
+				fmt.Fprintln(w, generator())
+			}
+		}()
+
+	default:
+		return nil, fmt.Errorf("Unknown command: %s", cmd)
+	}
+
+	return r, nil
+}
+
+func (s *Session) CompleteCommand(words []string, i int) []string {
+	switch {
+	case strings.HasPrefix("ls", words[i]):
+		return []string{"ls"}
+
+	case strings.HasPrefix("random", words[i]):
+		return []string{
+			"random paragraph",
+			"random noun",
+			"random silly_name",
+		}
+
+	case lookbackCheck(words, i, "random", "paragraph"):
+		return []string{"paragraph"}
+
+	case lookbackCheck(words, i, "random", "noun"):
+		return []string{"noun"}
+
+	case lookbackCheck(words, i, "random", "silly_name"):
+		return []string{"silly_name"}
+
+	default:
+		return nil
+	}
+}
+
+func arg(sl []string, i int) string {
+	if i >= len(sl) {
+		return ""
+	}
+	return sl[i]
 }
