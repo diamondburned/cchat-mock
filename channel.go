@@ -398,12 +398,20 @@ func (ch *Channel) CompleteMessage(words []string, i int) (entries []cchat.Compl
 		)
 
 	default:
+		var found = map[string]struct{}{}
+
 		ch.messageMutex.Lock()
 		defer ch.messageMutex.Unlock()
 
 		// Look for members.
 		for _, id := range ch.messageids {
 			if msg := ch.messages[id]; strings.HasPrefix(msg.author.Content, words[i]) {
+				if _, ok := found[msg.author.Content]; ok {
+					continue
+				}
+
+				found[msg.author.Content] = struct{}{}
+
 				entries = append(entries, cchat.CompletionEntry{
 					Raw:     msg.author.Content,
 					Text:    msg.author,

@@ -62,6 +62,12 @@ github.com/diamondburned/cchat v0.0.36 h1:fOD84RV7EUCjoOSogX/Hu5pe4tzHk3Qh7taKao
 github.com/diamondburned/cchat v0.0.36/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/diamondburned/cchat v0.0.37 h1:yGz9yls5Lb/vLkU/DU53GjC80WOqoRe229DXsu5mtaY=
 github.com/diamondburned/cchat v0.0.37/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.38 h1:U40c2uj2sxfDAQ+y3BV+1okpGfWSWEtjls3Clco8A5k=
+github.com/diamondburned/cchat v0.0.38/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.39 h1:Hxd7swmAIECm0MBd5wb1IFvreChwDFwnAshqgAstWGA=
+github.com/diamondburned/cchat v0.0.39/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.40 h1:38gPyJnnDoNDHrXcV8Qchfv3y6jlS3Fzz/6FY0BPH6I=
+github.com/diamondburned/cchat v0.0.40/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/lucasb-eyer/go-colorful v1.0.3 h1:QIbQXiugsb+q10B+MI+7DI1oQLdmnep86tWFlaaUAac=
 github.com/lucasb-eyer/go-colorful v1.0.3/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
