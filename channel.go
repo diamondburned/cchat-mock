@@ -344,6 +344,7 @@ func (ch *Channel) MessageActions(id string) []string {
 		DeleteAction,
 		NoopAction,
 		BestTrapAction,
+		TriggerTypingAction,
 	}
 }
 
