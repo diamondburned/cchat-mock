@@ -79,12 +79,7 @@ func echoMessage(sendable cchat.SendableMessage, id uint32, author text.Rich) Me
 }
 
 func randomMessage(id uint32) Message {
-	var author = randomdata.SillyName()
-
-	return randomMessageWithAuthor(id, text.Rich{
-		Content:  author,
-		Segments: []text.Segment{segments.NewRandomColored(author)},
-	})
+	return randomMessageWithAuthor(id, randomAuthor().name)
 }
 
 func randomMessageWithAuthor(id uint32, author text.Rich) Message {
@@ -121,6 +116,16 @@ var (
 	_ cchat.MessageAuthor       = (*Author)(nil)
 	_ cchat.MessageAuthorAvatar = (*Author)(nil)
 )
+
+func randomAuthor() Author {
+	var author = randomdata.SillyName()
+	return Author{
+		name: text.Rich{
+			Content:  author,
+			Segments: []text.Segment{segments.NewRandomColored(author)},
+		},
+	}
+}
 
 func (a Author) ID() string {
 	return a.name.Content

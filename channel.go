@@ -31,6 +31,7 @@ type Channel struct {
 	send chan cchat.SendableMessage // ideally this should be another type
 	edit chan Message               // id
 	del  chan MessageHeader
+	typ  chan Author
 
 	messageMutex sync.Mutex
 	messages     map[uint32]Message
@@ -44,13 +45,14 @@ type Channel struct {
 }
 
 var (
-	_ cchat.Server                     = (*Channel)(nil)
-	_ cchat.ServerMessage              = (*Channel)(nil)
-	_ cchat.ServerMessageSender        = (*Channel)(nil)
-	_ cchat.ServerMessageSendCompleter = (*Channel)(nil)
-	_ cchat.ServerNickname             = (*Channel)(nil)
-	_ cchat.ServerMessageEditor        = (*Channel)(nil)
-	_ cchat.ServerMessageActioner      = (*Channel)(nil)
+	_ cchat.Server                       = (*Channel)(nil)
+	_ cchat.ServerMessage                = (*Channel)(nil)
+	_ cchat.ServerMessageSender          = (*Channel)(nil)
+	_ cchat.ServerMessageSendCompleter   = (*Channel)(nil)
+	_ cchat.ServerNickname               = (*Channel)(nil)
+	_ cchat.ServerMessageEditor          = (*Channel)(nil)
+	_ cchat.ServerMessageActioner        = (*Channel)(nil)
+	_ cchat.ServerMessageTypingIndicator = (*Channel)(nil)
 )
 
 func (ch *Channel) ID() string {
@@ -93,6 +95,7 @@ func (ch *Channel) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (
 		ch.send = make(chan cchat.SendableMessage)
 		ch.edit = make(chan Message)
 		ch.del = make(chan MessageHeader)
+		ch.typ = make(chan Author)
 
 		// Generate the backlog.
 		for i := 0; i < FetchBacklog; i++ {
@@ -330,9 +333,10 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 }
 
 const (
-	DeleteAction   = "Delete"
-	NoopAction     = "No-op"
-	BestTrapAction = "What's the best trap?"
+	DeleteAction        = "Delete"
+	NoopAction          = "No-op"
+	BestTrapAction      = "What's the best trap?"
+	TriggerTypingAction = "Trigger Typing"
 )
 
 func (ch *Channel) MessageActions(id string) []string {
@@ -347,7 +351,7 @@ func (ch *Channel) MessageActions(id string) []string {
 // takes a container: the frontend should call this in a goroutine.
 func (ch *Channel) DoMessageAction(action, messageID string) error {
 	switch action {
-	case DeleteAction:
+	case DeleteAction, TriggerTypingAction:
 		i, err := strconv.Atoi(messageID)
 		if err != nil {
 			return errors.Wrap(err, "Invalid ID")
@@ -355,7 +359,14 @@ func (ch *Channel) DoMessageAction(action, messageID string) error {
 
 		// Simulate IO.
 		simulateAustralianInternet()
-		ch.del <- MessageHeader{uint32(i), time.Now()}
+
+		switch action {
+		case DeleteAction:
+			ch.del <- MessageHeader{uint32(i), time.Now()}
+		case TriggerTypingAction:
+			// Find the message.
+			ch.typ <- Author{name: ch.messages[uint32(i)].author}
+		}
 
 	case NoopAction:
 		// do nothing.
@@ -439,6 +450,49 @@ func lookbackCheck(words []string, i int, prev, this string) bool {
 	return strings.HasPrefix(this, words[i]) && i > 0 && words[i-1] == prev
 }
 
+// Typing sleeps and returns possibly an error.
+func (ch *Channel) Typing() error {
+	return simulateAustralianInternet()
+}
+
+// TypingTimeout returns 5 seconds.
+func (ch *Channel) TypingTimeout() time.Duration {
+	return 5 * time.Second
+}
+
+type Typer struct {
+	Author
+	time time.Time
+}
+
+var _ cchat.Typer = (*Typer)(nil)
+
+func newTyper(a Author) *Typer   { return &Typer{a, time.Now()} }
+func randomTyper() *Typer        { return &Typer{randomAuthor(), time.Now()} }
+func (t *Typer) Time() time.Time { return t.time }
+
+func (ch *Channel) TypingSubscribe(ti cchat.TypingIndicator) (stop func(), err error) {
+	var stopch = make(chan struct{})
+
+	go func() {
+		var ticker = time.NewTicker(8 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-stopch:
+				return
+			case <-ticker.C:
+				ti.AddTyper(randomTyper())
+			case author := <-ch.typ:
+				ti.AddTyper(newTyper(author))
+			}
+		}
+	}()
+
+	return func() { close(stopch) }, nil
+}
+
 func generateChannels(s *Session, amount int) []cchat.Server {
 	var channels = make([]cchat.Server, amount)
 	for i := range channels {
@@ -458,31 +512,4 @@ func generateChannels(s *Session, amount int) []cchat.Server {
 
 func randClamp(min, max int) int {
 	return rand.Intn(max-min) + min
-}
-
-// ErrTimedOut is returned when the simulated IO decides to fail.
-var ErrTimedOut = errors.New("Australian Internet unsupported.")
-
-// simulate network latency
-func simulateAustralianInternet() error {
-	return simulateAustralianInternetCtx(context.Background())
-}
-
-func simulateAustralianInternetCtx(ctx context.Context) (err error) {
-	var ms = randClamp(internetMinLatency, internetMaxLatency)
-
-	select {
-	case <-time.After(time.Duration(ms) * time.Millisecond):
-		// noop
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-
-	// because australia, drop packet 20% of the time if internetCanFail is
-	// true.
-	if internetCanFail && rand.Intn(100) < 20 {
-		return ErrTimedOut
-	}
-
-	return nil
 }

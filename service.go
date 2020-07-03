@@ -82,16 +82,9 @@ func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 	return newSession(form[0]), nil
 }
 
-var (
-	// channel.go @ simulateAustralianInternet
-	internetCanFail = true
-	// 500ms ~ 3s
-	internetMinLatency = 500
-	internetMaxLatency = 3000
-)
-
 func (s Service) Configuration() (map[string]string, error) {
 	return map[string]string{
+		// refer to internet.go
 		"internet.canFail":    strconv.FormatBool(internetCanFail),
 		"internet.minLatency": strconv.Itoa(internetMinLatency),
 		"internet.maxLatency": strconv.Itoa(internetMaxLatency),
