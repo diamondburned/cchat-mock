@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/diamondburned/cchat/text"
+	"github.com/lucasb-eyer/go-colorful"
 )
 
 func init() {
@@ -28,6 +29,12 @@ func NewColored(str string, color uint32) Colored {
 
 func NewRandomColored(str string) Colored {
 	return Colored{len(str), RandomColor()}
+}
+
+func NewColorful(str string, color colorful.Color) Colored {
+	r, g, b := color.RGB255()
+	h := (uint32(r) << 16) + (uint32(g) << 8) + (uint32(b))
+	return NewColored(str, h)
 }
 
 func (color Colored) Bounds() (start, end int) {

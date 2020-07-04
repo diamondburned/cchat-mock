@@ -5,10 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pallinder/go-randomdata"
+	"github.com/diamondburned/aqs"
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat-mock/segments"
 	"github.com/diamondburned/cchat/text"
+
+	_ "github.com/diamondburned/aqs/data"
+	"github.com/diamondburned/aqs/incr"
 )
 
 const avatarURL = "https://gist.github.com/diamondburned/945744c2b5ce0aa0581c9267a4e5cf24/raw/598069da673093aaca4cd4aa0ede1a0e324e9a3a/astolfo_selfie.png"
@@ -38,7 +41,7 @@ func (m MessageHeader) Time() time.Time {
 
 type Message struct {
 	MessageHeader
-	author  text.Rich
+	author  Author
 	content string
 	nonce   string
 }
@@ -51,22 +54,22 @@ var (
 	_ cchat.MessageMentioned = (*Message)(nil)
 )
 
-func newEmptyMessage(id uint32, author text.Rich) Message {
+func newEmptyMessage(id uint32, author Author) Message {
 	return Message{
 		MessageHeader: MessageHeader{id: id},
 		author:        author,
 	}
 }
 
-func newRandomMessage(id uint32, author text.Rich) Message {
+func newRandomMessage(id uint32, author Author) Message {
 	return Message{
 		MessageHeader: MessageHeader{id: id, time: time.Now()},
 		author:        author,
-		content:       randomdata.Paragraph(),
+		content:       incr.RandomQuote(author.char),
 	}
 }
 
-func echoMessage(sendable cchat.SendableMessage, id uint32, author text.Rich) Message {
+func echoMessage(sendable cchat.SendableMessage, id uint32, author Author) Message {
 	var echo = Message{
 		MessageHeader: MessageHeader{id: id, time: time.Now()},
 		author:        author,
@@ -79,19 +82,19 @@ func echoMessage(sendable cchat.SendableMessage, id uint32, author text.Rich) Me
 }
 
 func randomMessage(id uint32) Message {
-	return randomMessageWithAuthor(id, randomAuthor().name)
+	return randomMessageWithAuthor(id, randomAuthor())
 }
 
-func randomMessageWithAuthor(id uint32, author text.Rich) Message {
+func randomMessageWithAuthor(id uint32, author Author) Message {
 	return Message{
 		MessageHeader: MessageHeader{id: id, time: time.Now()},
 		author:        author,
-		content:       randomdata.Paragraph(),
+		content:       incr.RandomQuote(author.char),
 	}
 }
 
 func (m Message) Author() cchat.MessageAuthor {
-	return Author{name: m.author}
+	return m.author
 }
 
 func (m Message) Content() text.Rich {
@@ -105,11 +108,12 @@ func (m Message) Nonce() string {
 // Mentioned is true when the message content contains the author's name.
 func (m Message) Mentioned() bool {
 	// hack
-	return strings.Contains(m.content, m.author.Content)
+	return strings.Contains(m.content, m.author.name.Content)
 }
 
 type Author struct {
 	name text.Rich
+	char aqs.Character
 }
 
 var (
@@ -117,12 +121,17 @@ var (
 	_ cchat.MessageAuthorAvatar = (*Author)(nil)
 )
 
+func newAuthor(name text.Rich) Author {
+	return Author{name: name}
+}
+
 func randomAuthor() Author {
-	var author = randomdata.SillyName()
+	var char = aqs.RandomCharacter()
 	return Author{
+		char: char,
 		name: text.Rich{
-			Content:  author,
-			Segments: []text.Segment{segments.NewRandomColored(author)},
+			Content:  char.Name,
+			Segments: []text.Segment{segments.NewColorful(char.Name, char.NameColor())},
 		},
 	}
 }
@@ -136,5 +145,8 @@ func (a Author) Name() text.Rich {
 }
 
 func (a Author) Avatar() string {
+	if a.char.ImageURL != "" {
+		return a.char.ImageURL
+	}
 	return avatarURL
 }

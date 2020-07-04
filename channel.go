@@ -21,7 +21,7 @@ const FetchBacklog = 35
 const maxBacklog = FetchBacklog * 2
 
 // max number to add to before the next author, with rand.Intn(limit) + incr.
-const sameAuthorLimit = 12
+const sameAuthorLimit = 6
 
 type Channel struct {
 	id       uint32
@@ -125,7 +125,7 @@ func (ch *Channel) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (
 		for {
 			select {
 			case msg := <-ch.send:
-				ch.addMessage(echoMessage(msg, ch.nextID(), ch.username), ct)
+				ch.addMessage(echoMessage(msg, ch.nextID(), newAuthor(ch.username)), ct)
 
 			case msg := <-ch.edit:
 				ct.UpdateMessage(msg)
@@ -166,7 +166,7 @@ func (ch *Channel) MessageEditable(id string) bool {
 	m, ok := ch.messages[i]
 	if ok {
 		// Editable if same author.
-		return m.author.Content == ch.username.Content
+		return m.author.name.Content == ch.username.Content
 	}
 
 	return false
@@ -295,16 +295,16 @@ func (ch *Channel) randomMsg() (msg Message) {
 
 	// Add a random number into incrAuthor and determine if that should be
 	// enough to generate a new author.
-	ch.incrAuthor += uint8(rand.Intn(5)) // 2~4 appearances
+	ch.incrAuthor += uint8(rand.Intn(sameAuthorLimit)) // 1~6 appearances
 
 	var lastID = ch.messageids[len(ch.messageids)-1]
-	var last = ch.messages[lastID]
+	var lastAu = ch.messages[lastID].author
 
 	// If the last author is not the current user, then we can use it.
 	// Should we generate a new author for the new message? No if we're not over
 	// the limits.
-	if last.author.Content != ch.username.Content && ch.incrAuthor < sameAuthorLimit {
-		msg = randomMessageWithAuthor(ch.nextID(), last.author)
+	if lastAu.name.Content != ch.username.Content && ch.incrAuthor < sameAuthorLimit {
+		msg = randomMessageWithAuthor(ch.nextID(), lastAu)
 	} else {
 		msg = randomMessage(ch.nextID())
 		ch.incrAuthor = 0 // reset
@@ -335,7 +335,7 @@ func (ch *Channel) SendMessage(msg cchat.SendableMessage) error {
 const (
 	DeleteAction        = "Delete"
 	NoopAction          = "No-op"
-	BestTrapAction      = "What's the best trap?"
+	BestTrapAction      = "Who's the best trap?"
 	TriggerTypingAction = "Trigger Typing"
 )
 
@@ -365,8 +365,7 @@ func (ch *Channel) DoMessageAction(action, messageID string) error {
 		case DeleteAction:
 			ch.del <- MessageHeader{uint32(i), time.Now()}
 		case TriggerTypingAction:
-			// Find the message.
-			ch.typ <- Author{name: ch.messages[uint32(i)].author}
+			ch.typ <- ch.messages[uint32(i)].author
 		}
 
 	case NoopAction:
@@ -417,16 +416,16 @@ func (ch *Channel) CompleteMessage(words []string, i int) (entries []cchat.Compl
 
 		// Look for members.
 		for _, id := range ch.messageids {
-			if msg := ch.messages[id]; strings.HasPrefix(msg.author.Content, words[i]) {
-				if _, ok := found[msg.author.Content]; ok {
+			if msg := ch.messages[id]; strings.HasPrefix(msg.author.name.Content, words[i]) {
+				if _, ok := found[msg.author.name.Content]; ok {
 					continue
 				}
 
-				found[msg.author.Content] = struct{}{}
+				found[msg.author.name.Content] = struct{}{}
 
 				entries = append(entries, cchat.CompletionEntry{
-					Raw:     msg.author.Content,
-					Text:    msg.author,
+					Raw:     msg.author.name.Content,
+					Text:    msg.author.name,
 					IconURL: avatarURL,
 				})
 			}
