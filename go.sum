@@ -4,6 +4,8 @@ github.com/diamondburned/aqs v0.0.0-20200704043812-99b676ee44eb h1:Ja/niwykeFoSk
 github.com/diamondburned/aqs v0.0.0-20200704043812-99b676ee44eb/go.mod h1:q1MbMBfZrv7xqV8n7LgMwhHs3oBbNwWJes8exs2AmDs=
 github.com/diamondburned/cchat v0.0.40 h1:38gPyJnnDoNDHrXcV8Qchfv3y6jlS3Fzz/6FY0BPH6I=
 github.com/diamondburned/cchat v0.0.40/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.0.43 h1:HetAujSaUSdnQgAUZgprNLARjf/MSWXpCfWdvX2wOCU=
+github.com/diamondburned/cchat v0.0.43/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/k0kubun/pp v3.0.1+incompatible/go.mod h1:GWse8YhT0p8pT4ir3ZgBbfZild3tgzSScAn6HmfYukg=
 github.com/lucasb-eyer/go-colorful v1.0.3 h1:QIbQXiugsb+q10B+MI+7DI1oQLdmnep86tWFlaaUAac=
