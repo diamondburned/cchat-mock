@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
@@ -46,7 +47,12 @@ func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error
 		return nil, ErrInvalidSession
 	}
 
-	return newSession(username), nil
+	sessionID, ok := storage["sessionID"]
+	if !ok {
+		return nil, ErrInvalidSession
+	}
+
+	return newSession(username, sessionID), nil
 }
 
 func (s Service) Authenticate() cchat.Authenticator {
@@ -79,7 +85,7 @@ func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 		return nil, errors.Wrap(err, "Authentication failed")
 	}
 
-	return newSession(form[0]), nil
+	return newSession(form[0], ""), nil
 }
 
 func (s Service) Configuration() (map[string]string, error) {
@@ -117,6 +123,7 @@ func unmarshalConfig(config map[string]string, key string, value interface{}) er
 }
 
 type Session struct {
+	sesID    string
 	username string
 	servers  []cchat.Server
 	lastid   uint32 // used for generation
@@ -131,14 +138,19 @@ var (
 	_ cchat.CommandCompleter = (*Session)(nil)
 )
 
-func newSession(username string) *Session {
-	ses := &Session{username: username}
+func newSession(username, sessionID string) *Session {
+	ses := &Session{username: username, sesID: sessionID}
 	ses.servers = GenerateServers(ses)
+
+	if sessionID == "" {
+		ses.sesID = strconv.FormatUint(rand.Uint64(), 10)
+	}
+
 	return ses
 }
 
 func (s *Session) ID() string {
-	return s.username
+	return s.sesID
 }
 
 func (s *Session) Name() text.Rich {
@@ -168,7 +180,8 @@ func (s *Session) Icon(ctx context.Context, iconer cchat.IconContainer) (func(),
 
 func (s *Session) Save() (map[string]string, error) {
 	return map[string]string{
-		"username": s.username,
+		"sessionID": s.sesID,
+		"username":  s.username,
 	}, nil
 }
 
