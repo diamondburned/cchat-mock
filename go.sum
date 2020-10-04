@@ -1,13 +1,11 @@
 github.com/Pallinder/go-randomdata v1.2.0 h1:DZ41wBchNRb/0GfsePLiSwb0PHZmT67XY00lCDlaYPg=
 github.com/Pallinder/go-randomdata v1.2.0/go.mod h1:yHmJgulpD2Nfrm0cR9tI/+oAgRqCQQixsA8HyRZfV9Y=
+github.com/dave/jennifer v1.4.1/go.mod h1:7jEdnm+qBcxl8PC0zyp7vxcpSRnzXSt9r39tpTVGlwA=
 github.com/diamondburned/aqs v0.0.0-20200704043812-99b676ee44eb h1:Ja/niwykeFoSkYxdRRzM8QUAuCswfLmaiBTd2UIU+54=
 github.com/diamondburned/aqs v0.0.0-20200704043812-99b676ee44eb/go.mod h1:q1MbMBfZrv7xqV8n7LgMwhHs3oBbNwWJes8exs2AmDs=
-github.com/diamondburned/cchat v0.0.40 h1:38gPyJnnDoNDHrXcV8Qchfv3y6jlS3Fzz/6FY0BPH6I=
-github.com/diamondburned/cchat v0.0.40/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
-github.com/diamondburned/cchat v0.0.43 h1:HetAujSaUSdnQgAUZgprNLARjf/MSWXpCfWdvX2wOCU=
-github.com/diamondburned/cchat v0.0.43/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
-github.com/diamondburned/cchat v0.0.46 h1:fzm2XA9uGasX0uaic1AFfUMGA53PlO+GGmkYbx49A5k=
-github.com/diamondburned/cchat v0.0.46/go.mod h1:+zXktogE45A0om4fT6B/z6Ii7FXNafjxsNspI0rlhbU=
+github.com/diamondburned/cchat v0.2.11 h1:w4c/6t02htGtVj6yIjznecOGMlkcj0TmmLy+K48gHeM=
+github.com/diamondburned/cchat v0.2.11/go.mod h1:IlMtF+XIvAJh0GL/2yFdf0/34w+Hdy5A1GgvSwAXtQI=
+github.com/go-test/deep v1.0.7/go.mod h1:QV8Hv/iy04NyLBxAdO9njL0iVPN1S4d/A3NVv1V36o8=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/k0kubun/pp v3.0.1+incompatible/go.mod h1:GWse8YhT0p8pT4ir3ZgBbfZild3tgzSScAn6HmfYukg=
 github.com/lucasb-eyer/go-colorful v1.0.3 h1:QIbQXiugsb+q10B+MI+7DI1oQLdmnep86tWFlaaUAac=

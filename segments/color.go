@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/diamondburned/cchat/text"
+	"github.com/diamondburned/cchat/utils/empty"
 	"github.com/lucasb-eyer/go-colorful"
 )
 
@@ -13,63 +14,78 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
-type Colored struct {
-	strlen int
-	color  uint32
+type ColoredSegment struct {
+	empty.TextSegment
+	strlen  int
+	colored Colored
 }
 
-var (
-	_ text.Colorer = (*Colored)(nil)
-	_ text.Segment = (*Colored)(nil)
-)
+var _ text.Segment = (*ColoredSegment)(nil)
 
-func NewColored(str string, color uint32) Colored {
-	return Colored{len(str), color}
+func NewColoredSegment(str string, color uint32) ColoredSegment {
+	return ColoredSegment{
+		strlen:  len(str),
+		colored: NewColored(color),
+	}
 }
 
-func NewRandomColored(str string) Colored {
-	return Colored{len(str), RandomColor()}
+func NewRandomColoredSegment(str string) ColoredSegment {
+	return ColoredSegment{
+		strlen:  len(str),
+		colored: NewRandomColored(),
+	}
 }
 
-func NewColorful(str string, color colorful.Color) Colored {
+func NewColorfulSegment(str string, color colorful.Color) ColoredSegment {
+	return ColoredSegment{
+		strlen:  len(str),
+		colored: NewColorful(color),
+	}
+}
+
+func (seg ColoredSegment) Bounds() (start, end int) {
+	return 0, seg.strlen
+}
+
+func (seg ColoredSegment) AsColorer() text.Colorer {
+	return seg.colored
+}
+
+type Colored uint32
+
+var _ text.Colorer = (*Colored)(nil)
+
+// NewColored makes a new color segment from a string and a 24-bit color.
+func NewColored(color uint32) Colored {
+	return Colored(color | (0xFF << 24)) // set alpha bits to 0xFF
+}
+
+// NewRandomColored returns a random color segment.
+func NewRandomColored() Colored {
+	return Colored(RandomColor())
+}
+
+// NewColorful returns a color segment from the given colorful.Color.
+func NewColorful(color colorful.Color) Colored {
 	r, g, b := color.RGB255()
-	h := (uint32(r) << 16) + (uint32(g) << 8) + (uint32(b))
-	return NewColored(str, h)
-}
-
-func (color Colored) Bounds() (start, end int) {
-	return 0, color.strlen
+	h := (0xFF << 24) + (uint32(r) << 16) + (uint32(g) << 8) + (uint32(b))
+	return NewColored(h)
 }
 
 func (color Colored) Color() uint32 {
-	return color.color
+	return uint32(color)
 }
 
-// var Colors = []uint32{
-// 	0x55cdfc,
-// 	0x609ffb,
-// 	0x6b78fa,
-// 	0x9375f9,
-// 	0xc180f8,
-// 	0xe88af8,
-// 	0xf794e7,
-// 	0xf79ecc,
-// 	0xf7a8b8,
-// }
-
-// func randomColor() uint32 {
-// 	return Colors[rand.Intn(len(Colors))]
-// }
-
 var Colors = []uint32{
-	0xF5ABBA,
-	0x5ACFFA, // starts here
-	0xF5ABBA,
-	0xFFFFFF,
+	0xF5ABBAFF,
+	0x5ACFFAFF, // starts here
+	0xF5ABBAFF,
+	0xFFFFFFFF,
 }
 
 var colorIndex uint32 = 0
 
+// RandomColor returns a random 32-bit RGBA color from the known palette.
 func RandomColor() uint32 {
 	i := atomic.AddUint32(&colorIndex, 1) % uint32(len(Colors))
 	return Colors[i]
