@@ -7,6 +7,8 @@ github.com/diamondburned/cchat v0.2.11 h1:w4c/6t02htGtVj6yIjznecOGMlkcj0TmmLy+K4
 github.com/diamondburned/cchat v0.2.11/go.mod h1:IlMtF+XIvAJh0GL/2yFdf0/34w+Hdy5A1GgvSwAXtQI=
 github.com/diamondburned/cchat v0.2.12 h1:R4wrBdhELMfhv2Kn3xL/H3ci8UcLXzFRPq1IrY4+js4=
 github.com/diamondburned/cchat v0.2.12/go.mod h1:IlMtF+XIvAJh0GL/2yFdf0/34w+Hdy5A1GgvSwAXtQI=
+github.com/diamondburned/cchat v0.3.0 h1:xC8Y+/nwsVhc4a7i7R+4n0JczOnFSA2Gmj6Bz/pZ5zo=
+github.com/diamondburned/cchat v0.3.0/go.mod h1:IlMtF+XIvAJh0GL/2yFdf0/34w+Hdy5A1GgvSwAXtQI=
 github.com/go-test/deep v1.0.7/go.mod h1:QV8Hv/iy04NyLBxAdO9njL0iVPN1S4d/A3NVv1V36o8=
 github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88/go.mod h1:3w7q1U84EfirKl04SVQ/s7nPm1ZPhiXd34z40TNz36k=
 github.com/k0kubun/pp v3.0.1+incompatible/go.mod h1:GWse8YhT0p8pT4ir3ZgBbfZild3tgzSScAn6HmfYukg=

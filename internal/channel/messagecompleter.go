@@ -32,10 +32,10 @@ func (msgc MessageCompleter) Complete(words []string, i int64) []cchat.Completio
 
 	case lookbackCheck(words, i, "best", "femboys:"):
 		return makeCompletion(
-			"trap: Astolfo",
-			"trap: Hackadoll No. 3",
-			"trap: Totsuka",
-			"trap: Felix Argyle",
+			"character: Astolfo",
+			"character: Hackadoll No. 3",
+			"character: Totsuka",
+			"character: Felix Argyle",
 		)
 
 	default:

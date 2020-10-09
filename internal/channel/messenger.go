@@ -128,8 +128,8 @@ func (msgr *Messenger) nextID() (id uint32) {
 
 func (msgr *Messenger) AsEditor() cchat.Editor { return msgr }
 
-// MessageEditable returns true if the message belongs to the author.
-func (msgr *Messenger) MessageEditable(id string) bool {
+// IsEditable returns true if the message belongs to the author.
+func (msgr *Messenger) IsEditable(id string) bool {
 	i, err := message.ParseID(id)
 	if err != nil {
 		return false
@@ -147,7 +147,7 @@ func (msgr *Messenger) MessageEditable(id string) bool {
 	return false
 }
 
-func (msgr *Messenger) RawMessageContent(id string) (string, error) {
+func (msgr *Messenger) RawContent(id string) (string, error) {
 	i, err := message.ParseID(id)
 	if err != nil {
 		return "", err
@@ -164,7 +164,7 @@ func (msgr *Messenger) RawMessageContent(id string) (string, error) {
 	return "", errors.New("Message not found")
 }
 
-func (msgr *Messenger) EditMessage(id, content string) error {
+func (msgr *Messenger) Edit(id, content string) error {
 	i, err := message.ParseID(id)
 	if err != nil {
 		return err

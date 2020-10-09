@@ -25,7 +25,7 @@ func NewMessageActioner(msgr *Messenger) MessageActioner {
 const (
 	DeleteAction        = "Delete"
 	NoopAction          = "No-op"
-	BestTrapAction      = "Who's the best trap?"
+	BestCharacterAction = "Who's the best character?"
 	TriggerTypingAction = "Trigger Typing"
 )
 
@@ -33,14 +33,14 @@ func (msga MessageActioner) Actions(id string) []string {
 	return []string{
 		DeleteAction,
 		NoopAction,
-		BestTrapAction,
+		BestCharacterAction,
 		TriggerTypingAction,
 	}
 }
 
-// DoAction will be blocked by IO. As goes for every other method that
-// takes a container: the frontend should call this in a goroutine.
-func (msga MessageActioner) DoAction(action, messageID string) error {
+// Do will be blocked by IO. As goes for every other method that takes a
+// container: the frontend should call this in a goroutine.
+func (msga MessageActioner) Do(action, messageID string) error {
 	switch action {
 	case DeleteAction, TriggerTypingAction:
 		i, err := strconv.Atoi(messageID)
@@ -63,8 +63,8 @@ func (msga MessageActioner) DoAction(action, messageID string) error {
 	case NoopAction:
 		// do nothing.
 
-	case BestTrapAction:
-		return msga.msgr.EditMessage(messageID, "Astolfo.")
+	case BestCharacterAction:
+		return msga.msgr.Edit(messageID, "Astolfo.")
 
 	default:
 		return errors.New("Unknown action.")

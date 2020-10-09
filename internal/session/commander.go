@@ -15,7 +15,7 @@ import (
 
 type Commander struct{}
 
-func (c *Commander) RunCommand(cmds []string, w io.Writer) error {
+func (c *Commander) Run(cmds []string, w io.Writer) error {
 	switch cmd := arg(cmds, 0); cmd {
 	case "ls":
 		fmt.Fprintln(w, "Commands: ls, random")
