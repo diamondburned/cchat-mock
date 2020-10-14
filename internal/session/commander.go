@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -15,10 +14,10 @@ import (
 
 type Commander struct{}
 
-func (c *Commander) Run(cmds []string, w io.Writer) error {
+func (c *Commander) Run(cmds []string) ([]byte, error) {
 	switch cmd := arg(cmds, 0); cmd {
 	case "ls":
-		fmt.Fprintln(w, "Commands: ls, random")
+		return []byte("Commands: ls, random"), nil
 
 	case "random":
 		// callback used to generate stuff and stream into readcloser
@@ -34,33 +33,32 @@ func (c *Commander) Run(cmds []string, w io.Writer) error {
 		case "silly_name":
 			generator = randomdata.SillyName
 		default:
-			return errors.New("Usage: random <paragraph|noun|silly_name> [repeat]")
+			return nil, errors.New("Usage: random <paragraph|noun|silly_name> [repeat]")
 		}
 
 		if n := arg(cmds, 2); n != "" {
 			i, err := strconv.Atoi(n)
 			if err != nil {
-				return errors.Wrap(err, "Failed to parse repeat number")
+				return nil, errors.Wrap(err, "Failed to parse repeat number")
 			}
 			times = i
 		}
 
+		var err error
+
 		for i := 0; i < times; i++ {
 			// Yes, we're simulating this even in something as trivial as a
 			// command prompt.
-			if err := internet.SimulateAustralian(); err != nil {
-				fmt.Fprintln(w, "Error:", err)
-				continue
+			if err = internet.SimulateAustralian(); err == nil {
+				return []byte(generator()), nil
 			}
-
-			fmt.Fprintln(w, generator())
 		}
 
-	default:
-		return fmt.Errorf("Unknown command: %s", cmd)
-	}
+		return nil, err
 
-	return nil
+	default:
+		return nil, fmt.Errorf("Unknown command: %q", cmd)
+	}
 }
 
 func (s *Commander) AsCompleter() cchat.Completer { return s }
