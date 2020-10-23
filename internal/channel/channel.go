@@ -17,7 +17,7 @@ type Channel struct {
 	name string
 	user Username
 
-	messenger *Messenger
+	messenger Messenger
 }
 
 var _ cchat.Server = (*Channel)(nil)
@@ -66,5 +66,6 @@ func (ch *Channel) AsNicknamer() cchat.Nicknamer {
 }
 
 func (ch *Channel) AsMessenger() cchat.Messenger {
-	return ch.messenger
+	ch.messenger.channel = ch
+	return &ch.messenger
 }
