@@ -35,3 +35,19 @@ func (Authenticator) Authenticate(form []string) (cchat.Session, error) {
 
 	return session.New(form[0], ""), nil
 }
+
+type FastAuthenticator struct{}
+
+var _ cchat.Authenticator = (*FastAuthenticator)(nil)
+
+func (FastAuthenticator) AuthenticateForm() []cchat.AuthenticateEntry {
+	return []cchat.AuthenticateEntry{
+		{
+			Name: "Username (fast)",
+		},
+	}
+}
+
+func (FastAuthenticator) Authenticate(form []string) (cchat.Session, error) {
+	return session.New(form[0], ""), nil
+}

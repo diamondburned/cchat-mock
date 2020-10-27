@@ -33,8 +33,11 @@ func (s Service) RestoreSession(storage map[string]string) (cchat.Session, error
 	return session.FromState(state), nil
 }
 
-func (s Service) Authenticate() cchat.Authenticator {
-	return Authenticator{}
+func (s Service) Authenticate() []cchat.Authenticator {
+	return []cchat.Authenticator{
+		Authenticator{},
+		FastAuthenticator{},
+	}
 }
 
 func (s Service) AsConfigurator() cchat.Configurator {
