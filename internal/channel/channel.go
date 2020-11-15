@@ -17,7 +17,7 @@ type Channel struct {
 	name string
 	user Username
 
-	messenger Messenger
+	messenger *Messenger
 }
 
 var _ cchat.Server = (*Channel)(nil)
@@ -40,7 +40,7 @@ func AsCChatServers(channels []*Channel) []cchat.Server {
 
 // NewChannel creates a new random channel.
 func NewChannel(state *shared.State) *Channel {
-	return &Channel{
+	ch := &Channel{
 		id:   state.NextID(),
 		name: "#" + randomdata.Noun(),
 		user: Username{
@@ -51,6 +51,10 @@ func NewChannel(state *shared.State) *Channel {
 			},
 		},
 	}
+
+	ch.messenger = NewMessenger(ch)
+
+	return ch
 }
 
 func (ch *Channel) ID() string {
@@ -66,6 +70,5 @@ func (ch *Channel) AsNicknamer() cchat.Nicknamer {
 }
 
 func (ch *Channel) AsMessenger() cchat.Messenger {
-	ch.messenger.channel = ch
-	return &ch.messenger
+	return ch.messenger
 }

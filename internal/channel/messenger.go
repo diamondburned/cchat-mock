@@ -44,6 +44,22 @@ type Messenger struct {
 
 var _ cchat.Messenger = (*Messenger)(nil)
 
+func NewMessenger(ch *Channel) *Messenger {
+	msgr := Messenger{}
+	msgr.channel = ch
+	// Initialize.
+	msgr.messages = make(map[uint32]message.Message, FetchBacklog)
+	msgr.messageids = make([]uint32, 0, FetchBacklog)
+
+	// Allocate 3 channels that we won't clean up, because we're lazy.
+	msgr.send = NewMessageSender(&msgr)
+	msgr.edit = make(chan message.Message)
+	msgr.del = make(chan message.Header)
+	msgr.typ = typing.NewSubscriber(message.NewAuthor(msgr.channel.user.Rich()))
+
+	return &msgr
+}
+
 func (msgr *Messenger) JoinServer(ctx context.Context, ct cchat.MessagesContainer) (func(), error) {
 	// Is this a fresh channel? If yes, generate messages with some IO latency.
 	if len(msgr.messageids) == 0 || msgr.messages == nil {
@@ -51,16 +67,6 @@ func (msgr *Messenger) JoinServer(ctx context.Context, ct cchat.MessagesContaine
 		if err := internet.SimulateAustralianCtx(ctx); err != nil {
 			return nil, err
 		}
-
-		// Initialize.
-		msgr.messages = make(map[uint32]message.Message, FetchBacklog)
-		msgr.messageids = make([]uint32, 0, FetchBacklog)
-
-		// Allocate 3 channels that we won't clean up, because we're lazy.
-		msgr.send = NewMessageSender(msgr)
-		msgr.edit = make(chan message.Message)
-		msgr.del = make(chan message.Header)
-		msgr.typ = typing.NewSubscriber(message.NewAuthor(msgr.channel.user.Rich()))
 
 		// Generate the backlog.
 		for i := 0; i < FetchBacklog; i++ {
