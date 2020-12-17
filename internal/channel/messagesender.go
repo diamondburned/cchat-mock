@@ -1,8 +1,6 @@
 package channel
 
 import (
-	"time"
-
 	"github.com/diamondburned/cchat"
 	"github.com/diamondburned/cchat-mock/internal/internet"
 	"github.com/pkg/errors"
@@ -30,13 +28,7 @@ func (msgs MessageSender) Send(msg cchat.SendableMessage) error {
 		return errors.Wrap(err, "Failed to send message")
 	}
 
-	go func() {
-		// Make no guarantee that a message may arrive immediately when the
-		// function exits.
-		<-time.After(time.Second)
-		msgs.ch <- msg
-	}()
-
+	msgs.ch <- msg
 	return nil
 }
 

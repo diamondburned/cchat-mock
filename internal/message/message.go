@@ -15,14 +15,12 @@ type Message struct {
 	Header
 	author  Author
 	content string
-	nonce   string
 }
 
 var (
 	_ cchat.MessageCreate = (*Message)(nil)
 	_ cchat.MessageUpdate = (*Message)(nil)
 	_ cchat.MessageDelete = (*Message)(nil)
-	_ cchat.Noncer        = (*Message)(nil)
 )
 
 func NewEmpty(id uint32, author Author) Message {
@@ -49,9 +47,6 @@ func Echo(sendable cchat.SendableMessage, id uint32, author Author) Message {
 		Header:  Header{id: id, time: time.Now()},
 		author:  author,
 		content: sendable.Content(),
-	}
-	if noncer := sendable.AsNoncer(); noncer != nil {
-		echo.nonce = noncer.Nonce()
 	}
 	return echo
 }
@@ -83,10 +78,6 @@ func (m Message) AuthorName() string {
 
 func (m Message) Content() text.Rich {
 	return text.Rich{Content: m.content}
-}
-
-func (m Message) Nonce() string {
-	return m.nonce
 }
 
 // Mentioned is true when the message content contains the author's name.
